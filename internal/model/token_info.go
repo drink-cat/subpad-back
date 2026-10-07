@@ -90,33 +90,21 @@ func (r *TokenInfoRepo) List(ctx context.Context, f TokenInfoFilter) ([]TokenInf
 	return rows, nil
 }
 
-func (r *TokenInfoRepo) GetByPool(ctx context.Context, chainID int, poolID string) (*TokenInfo, error) {
-	if poolID == "" {
-		return nil, fmt.Errorf("get token_info: pool_id is required")
-	}
-	var row TokenInfo
-	err := r.db.WithContext(ctx).Where("chainid = ? AND pool_id = ?", chainID, poolID).First(&row).Error
-	if err != nil {
-		return nil, fmt.Errorf("get token_info: %w", err)
-	}
-	return &row, nil
-}
-
-// FindPending 找这条链上同符号、还没写上代币地址的最新一行。发币接口会先落库，日志到达后再补齐。
-func (r *TokenInfoRepo) FindPending(ctx context.Context, chainID int, symbol string) (*TokenInfo, error) {
+// GetBySymbol 按代币符号取最新一行。发币接口先落库，日志到达后按符号找到这一行再补齐。
+func (r *TokenInfoRepo) GetBySymbol(ctx context.Context, symbol string) (*TokenInfo, error) {
 	if symbol == "" {
 		return nil, nil
 	}
 	var row TokenInfo
 	err := r.db.WithContext(ctx).
-		Where("chainid = ? AND token_symbol = ? AND token_addr = ?", chainID, symbol, "").
+		Where("token_symbol = ?", symbol).
 		Order("id DESC").
 		First(&row).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, nil
 	}
 	if err != nil {
-		return nil, fmt.Errorf("find token_info: %w", err)
+		return nil, fmt.Errorf("get token_info: %w", err)
 	}
 	return &row, nil
 }

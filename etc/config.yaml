@@ -28,14 +28,14 @@ synclog:  # 扫块
     rpcUrl: http://127.0.0.1:8545
     beginBlock: 705
     confirmations: 1
-    timerIntervalSeconds: 60
+    timerIntervalSeconds: 5
     launchContract: 0x88D1aF96098a928eE278f162c1a84f339652f95b
   - name: sepolia
     chainId: 11155111
     rpcUrl: https://eth-sepolia.g.alchemy.com/v2/umAjVzLoWaqMIxZh9OFn2
     beginBlock: 11834432
     confirmations: 12
-    timerIntervalSeconds: 60
+    timerIntervalSeconds: 5
     launchContract: 0x111
 
 

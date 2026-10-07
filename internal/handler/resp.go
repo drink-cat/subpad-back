@@ -2,7 +2,6 @@ package handler
 
 import (
 	"errors"
-	"log/slog"
 	"net/http"
 	"strconv"
 	"strings"
@@ -88,9 +87,11 @@ func bindQuery(c *gin.Context, dst any) bool {
 }
 
 func writeErr(c *gin.Context, err error) {
-	switch {
-	case err == nil:
+	if err == nil {
 		return
+	}
+	_ = c.Error(err)
+	switch {
 	case errors.Is(err, gorm.ErrRecordNotFound):
 		fail(c, http.StatusNotFound, codeNotFound, "not found")
 	case isConflict(err):
@@ -98,7 +99,6 @@ func writeErr(c *gin.Context, err error) {
 	case strings.Contains(err.Error(), "required") || strings.Contains(err.Error(), "nil row"):
 		fail(c, http.StatusBadRequest, codeBadRequest, err.Error())
 	default:
-		slog.Error("api", "method", c.Request.Method, "path", c.Request.URL.Path, "err", err)
 		fail(c, http.StatusInternalServerError, codeInternal, "internal error")
 	}
 }

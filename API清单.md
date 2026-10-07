@@ -42,7 +42,7 @@ Authorization: Bearer <jwtToken>
 
 `JwtFilter` 校验令牌后查 `user_info`，把当前用户放进请求上下文。令牌默认 72 小时有效。
 
-`DomainFilter` 读取 Host。形如 `foods.launch.o1.local` 时，取出 `foods`，按 `subpad_info.brand` 查询并放进请求上下文。查到后把这一行 JSON 放进响应头 `X-Subpad-Info`，字段与 `subpad_info` 接口相同。主机名不带这个后缀时跳过，不写这个头，例如 `localhost`。后缀由配置 `domain.suffix` 指定，默认 `launch.o1.local`。
+`DomainFilter` 读取主机名。请求带 `X-Forwarded-Host` 时用它（前端把接口代理到本机时，原始域名在这个头里），否则用 `Host`。形如 `foods.launch.o1.local` 时，取出 `foods`，按 `subpad_info.brand` 查询并放进请求上下文。查到后把这一行 JSON 放进响应头 `X-Subpad-Info`，字段与 `subpad_info` 接口相同。主机名不带这个后缀时跳过，不写这个头，例如 `localhost`。后缀由配置 `domain.suffix` 指定，默认 `launch.o1.local`。
 
 ## GET /health
 

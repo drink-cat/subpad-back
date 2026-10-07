@@ -31,26 +31,18 @@ func applyTokenCreated(ctx context.Context, store *model.Store, chainID int, lg 
 	if err != nil {
 		return err
 	}
-	row, err := store.TokenInfo.GetByPool(ctx, chainID, ev.PoolID)
-	if errors.Is(err, gorm.ErrRecordNotFound) {
-		row, err = store.TokenInfo.FindPending(ctx, chainID, ev.Symbol)
-	}
+	row, err := store.TokenInfo.GetBySymbol(ctx, ev.Symbol)
 	if err != nil {
 		return err
 	}
 	if row == nil {
 		row = &model.TokenInfo{ChainID: chainID}
 		fillToken(row, ev)
-		if err = store.TokenInfo.Create(ctx, row); err != nil {
-			return err
-		}
-	} else {
-		fillToken(row, ev)
-		if err = store.TokenInfo.Update(ctx, row); err != nil {
-			return err
-		}
+		return store.TokenInfo.Create(ctx, row)
 	}
-	return nil
+	row.ChainID = chainID
+	fillToken(row, ev)
+	return store.TokenInfo.Update(ctx, row)
 }
 
 func fillToken(row *model.TokenInfo, ev tokenCreated) {

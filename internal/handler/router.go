@@ -17,7 +17,7 @@ func NewRouter(sc *svc.ServiceContext) *gin.Engine {
 
 	h := &Handler{sc: sc}
 	r := gin.New()
-	r.Use(gin.Recovery(), h.DomainFilter())
+	r.Use(gin.Recovery(), h.AccessLog(), h.DomainFilter())
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
 			"status": "ok",

@@ -30,11 +30,19 @@ func TestApplyTokenCreatedUpdatesPending(t *testing.T) {
 	pending := &model.TokenInfo{
 		UserID:      3,
 		SubpadID:    &subpadID,
-		ChainID:     31337,
 		TokenSymbol: "AAA",
 		TokenName:   "old",
 	}
+	other := &model.TokenInfo{
+		UserID:      9,
+		ChainID:     31337,
+		TokenSymbol: "ZZZ",
+		TokenName:   "keep",
+	}
 	if err := store.TokenInfo.Create(context.Background(), pending); err != nil {
+		t.Fatal(err)
+	}
+	if err := store.TokenInfo.Create(context.Background(), other); err != nil {
 		t.Fatal(err)
 	}
 	supply, _ := new(big.Int).SetString("1000000000000000000000000", 10)
@@ -50,15 +58,22 @@ func TestApplyTokenCreatedUpdatesPending(t *testing.T) {
 	if err := saveLog(context.Background(), store, 31337, lg); err != nil {
 		t.Fatal(err)
 	}
-	rows, err := store.TokenInfo.List(context.Background(), model.TokenInfoFilter{})
+	rows, err := store.TokenInfo.List(context.Background(), model.TokenInfoFilter{TokenSymbol: "AAA"})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(rows) != 1 || rows[0].ID != pending.ID || rows[0].UserID != 3 || rows[0].SubpadID == nil || *rows[0].SubpadID != 7 {
+	if len(rows) != 1 || rows[0].ID != pending.ID || rows[0].UserID != 3 || rows[0].ChainID != 31337 || rows[0].SubpadID == nil || *rows[0].SubpadID != 7 {
 		t.Fatalf("tokens = %+v", rows)
 	}
 	if rows[0].TokenAddr == "" || rows[0].PoolID == "" || rows[0].LaunchSupply.String() != supply.String() || rows[0].QuoteTokenSymbol != "USDC" {
 		t.Fatalf("token = %+v", rows[0])
+	}
+	kept, err := store.TokenInfo.List(context.Background(), model.TokenInfoFilter{TokenSymbol: "ZZZ"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(kept) != 1 || kept[0].TokenAddr != "" || kept[0].TokenName != "keep" || kept[0].UserID != 9 {
+		t.Fatalf("other = %+v", kept)
 	}
 	events, err := store.SyncEvent.List(context.Background(), model.SyncEventFilter{EventName: "TokenCreated"})
 	if err != nil {

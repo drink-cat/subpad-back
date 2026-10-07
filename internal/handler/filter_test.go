@@ -106,6 +106,24 @@ func TestLoginAndDomain(t *testing.T) {
 	}
 
 	req = httptest.NewRequest(http.MethodGet, "/probe", nil)
+	req.Host = "127.0.0.1:8080"
+	req.Header.Set("X-Forwarded-Host", "foods.launch.o1.local")
+	rec = httptest.NewRecorder()
+	probe.ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK || !strings.Contains(rec.Header().Get(headerSubpad), `"brand":"foods"`) {
+		t.Fatalf("forwarded host = %d header = %s", rec.Code, rec.Header().Get(headerSubpad))
+	}
+
+	req = httptest.NewRequest(http.MethodGet, "/probe", nil)
+	req.Host = "foods.launch.o1.local"
+	req.Header.Set("X-Forwarded-Host", "localhost:80")
+	rec = httptest.NewRecorder()
+	probe.ServeHTTP(rec, req)
+	if rec.Code != http.StatusNoContent || rec.Header().Get(headerSubpad) != "" {
+		t.Fatalf("forwarded plain host = %d header = %s", rec.Code, rec.Header().Get(headerSubpad))
+	}
+
+	req = httptest.NewRequest(http.MethodGet, "/probe", nil)
 	req.Host = "localhost:8080"
 	rec = httptest.NewRecorder()
 	probe.ServeHTTP(rec, req)

@@ -74,9 +74,20 @@ func (h *Handler) JwtFilter() gin.HandlerFunc {
 	}
 }
 
+func requestHost(c *gin.Context) string {
+	forwarded := strings.TrimSpace(c.GetHeader("X-Forwarded-Host"))
+	if forwarded == "" {
+		return c.Request.Host
+	}
+	if host, _, ok := strings.Cut(forwarded, ","); ok {
+		forwarded = strings.TrimSpace(host)
+	}
+	return forwarded
+}
+
 func (h *Handler) DomainFilter() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		brand, ok := brandFromHost(c.Request.Host, h.sc.Config.Domain.Suffix)
+		brand, ok := brandFromHost(requestHost(c), h.sc.Config.Domain.Suffix)
 		if !ok {
 			c.Next()
 			return
