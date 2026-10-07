@@ -171,9 +171,16 @@ func TestUserAndRelatedAPI(t *testing.T) {
 		t.Fatalf("subpad = %+v", changed)
 	}
 
+	zero := int64(0)
+	decodeData[model.TokenInfo](t, perform(r, http.MethodPost, "/api/token_info/create", model.TokenInfo{
+		SubpadID:    &zero,
+		PoolID:      "pool-fee",
+		ChainID:     1,
+		TokenSymbol: "FEE",
+	}))
 	rec = perform(r, http.MethodPost, "/api/fee_info/create", model.FeeInfo{
 		ChainID:    1,
-		PoolID:     "pool-1",
+		PoolID:     "pool-fee",
 		TxHash:     "0xtx",
 		FeeType:    model.FeeTypePlatform,
 		FeeDecimal: 6,
@@ -330,6 +337,75 @@ func TestListTokenScopedToSubpad(t *testing.T) {
 	tokens = decodeData[[]model.TokenInfo](t, rec)
 	if len(tokens) != 1 || tokens[0].ID != padToken.ID || tokens[0].SubpadID == nil || *tokens[0].SubpadID != subpad.ID {
 		t.Fatalf("foods tokens = %+v", tokens)
+	}
+}
+
+func TestListFeeScopedToSubpad(t *testing.T) {
+	db := testDB(t)
+	store := model.NewStore(db)
+	jwt := ""
+	r := &tokenHandler{next: testRouter(t, store), token: &jwt}
+
+	perform(r, http.MethodPost, "/api/user_info/create", map[string]any{
+		"username": "alice",
+		"password": "secret",
+	})
+	session := decodeData[loginData](t, perform(r, http.MethodPost, "/api/user_info/login", map[string]any{
+		"username": "alice",
+		"password": "secret",
+	}))
+	jwt = session.JwtToken
+
+	subpad := decodeData[model.SubpadInfo](t, perform(r, http.MethodPost, "/api/subpad_info/create", model.SubpadInfo{
+		Brand:    "foods",
+		NameFull: "Foods",
+		Status:   1,
+		SwapType: model.SwapTypeMock,
+	}))
+	zero := int64(0)
+	decodeData[model.TokenInfo](t, perform(r, http.MethodPost, "/api/token_info/create", model.TokenInfo{
+		SubpadID:    &zero,
+		PoolID:      "pool-default",
+		ChainID:     1,
+		TokenSymbol: "DEF",
+	}))
+	decodeData[model.TokenInfo](t, perform(r, http.MethodPost, "/api/token_info/create", model.TokenInfo{
+		SubpadID:    &subpad.ID,
+		PoolID:      "pool-food",
+		ChainID:     1,
+		TokenSymbol: "FOOD",
+	}))
+	defaultFee := decodeData[model.FeeInfo](t, perform(r, http.MethodPost, "/api/fee_info/create", model.FeeInfo{
+		ChainID:    1,
+		PoolID:     "pool-default",
+		TxHash:     "0xdefault",
+		FeeType:    model.FeeTypePlatform,
+		FeeDecimal: 6,
+		FeeAmount:  model.NewAmount(1),
+		FeeTo:      "0xfee",
+	}))
+	padFee := decodeData[model.FeeInfo](t, perform(r, http.MethodPost, "/api/fee_info/create", model.FeeInfo{
+		ChainID:    1,
+		PoolID:     "pool-food",
+		TxHash:     "0xfood",
+		FeeType:    model.FeeTypeSubpad,
+		FeeDecimal: 6,
+		FeeAmount:  model.NewAmount(2),
+		FeeTo:      "0xfee",
+	}))
+
+	fees := decodeData[[]model.FeeInfo](t, perform(r, http.MethodGet, "/api/fee_info/list?subpadId="+itoa(subpad.ID), nil))
+	if len(fees) != 1 || fees[0].ID != defaultFee.ID {
+		t.Fatalf("default pad fees = %+v", fees)
+	}
+
+	req := httptest.NewRequest(http.MethodGet, "/api/fee_info/list?subpadId=0", nil)
+	req.Host = "foods.launch.o1.local"
+	rec := httptest.NewRecorder()
+	r.ServeHTTP(rec, req)
+	fees = decodeData[[]model.FeeInfo](t, rec)
+	if len(fees) != 1 || fees[0].ID != padFee.ID {
+		t.Fatalf("foods fees = %+v", fees)
 	}
 }
 

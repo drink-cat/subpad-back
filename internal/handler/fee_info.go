@@ -98,6 +98,13 @@ func (h *Handler) listFee(c *gin.Context) {
 	if !bindQuery(c, &f) {
 		return
 	}
+	// 只返回当前域名对应的 subpad。没有子域名前缀时是默认 pad，subpad_id 为 0。
+	// fee_info 没有 pad 字段，按同一条链上的 pool_id 找到 token_info 再过滤。
+	subpadID := int64(0)
+	if subpad, ok := CurrentSubpad(c); ok {
+		subpadID = subpad.ID
+	}
+	f.SubpadID = &subpadID
 	rows, err := store.FeeInfo.List(c.Request.Context(), f)
 	if err != nil {
 		writeErr(c, err)

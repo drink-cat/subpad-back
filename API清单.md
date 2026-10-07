@@ -699,6 +699,8 @@ Authorization: Bearer <jwtToken>
 
 请求：查询参数 `chainId=1&poolId=pool-1&txHash=0xtx&feeType=platform&feeTo=0xfee&offset=0&limit=20`。筛选参数可不传。无 JSON 请求体。
 
+只返回当前域名对应的 subpad 下的 fee。`fee_info` 没有 pad 字段，用同一条链上的 `poolId` 关联 `token_info.subpadId`。`DomainFilter` 解析到 brand 时用该 `subpad_info.id`；主机名没有子域名前缀时是默认 pad，按 `subpadId = 0` 过滤。查询参数里的 `subpadId` 不生效。
+
 响应：
 
 ```json

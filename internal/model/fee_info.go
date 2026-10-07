@@ -32,11 +32,12 @@ type FeeInfo struct {
 func (FeeInfo) TableName() string { return "fee_info" }
 
 type FeeInfoFilter struct {
-	ChainID *int   `form:"chainId"`
-	PoolID  string `form:"poolId"`
-	TxHash  string `form:"txHash"`
-	FeeType string `form:"feeType"`
-	FeeTo   string `form:"feeTo"`
+	ChainID  *int   `form:"chainId"`
+	PoolID   string `form:"poolId"`
+	TxHash   string `form:"txHash"`
+	FeeType  string `form:"feeType"`
+	FeeTo    string `form:"feeTo"`
+	SubpadID *int64 `form:"subpadId"`
 	Page
 }
 
@@ -93,6 +94,12 @@ func (r *FeeInfoRepo) List(ctx context.Context, f FeeInfoFilter) ([]FeeInfo, err
 	}
 	if f.FeeTo != "" {
 		q = q.Where("fee_to = ?", f.FeeTo)
+	}
+	if f.SubpadID != nil {
+		q = q.Where(
+			"EXISTS (SELECT 1 FROM token_info WHERE token_info.pool_id = fee_info.pool_id AND token_info.chainid = fee_info.chainid AND token_info.subpad_id = ?)",
+			*f.SubpadID,
+		)
 	}
 	rows := make([]FeeInfo, 0)
 	if err := f.Apply(q.Order("id DESC")).Find(&rows).Error; err != nil {
