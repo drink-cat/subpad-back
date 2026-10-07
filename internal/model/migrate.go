@@ -18,6 +18,7 @@ func AutoMigrate(db *gorm.DB) error {
 		&TokenInfo{},
 		&SubpadInfo{},
 		&FeeInfo{},
+		&SwapInfo{},
 		&SyncEvent{},
 		&SyncCursor{},
 	)

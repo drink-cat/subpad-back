@@ -20,6 +20,7 @@ type ServiceContext struct {
 	Store     *model.Store
 	Eth       *ethclient.Client
 	Scheduler gocron.Scheduler
+	closeScan func()
 }
 
 func New(cfg *config.Config) (*ServiceContext, error) {
@@ -43,9 +44,11 @@ func New(cfg *config.Config) (*ServiceContext, error) {
 		slog.Info("ethereum client skipped: rpc is empty")
 	}
 
+	store := model.NewStore(db)
 	var scheduler gocron.Scheduler
+	var closeScan func()
 	if cfg.Cron.Enabled {
-		scheduler, err = cron.Start()
+		scheduler, closeScan, err = cron.Start(store, cfg.SyncLog)
 		if err != nil {
 			closeDB(db)
 			if ethClient != nil {
@@ -58,9 +61,10 @@ func New(cfg *config.Config) (*ServiceContext, error) {
 	return &ServiceContext{
 		Config:    cfg,
 		DB:        db,
-		Store:     model.NewStore(db),
+		Store:     store,
 		Eth:       ethClient,
 		Scheduler: scheduler,
+		closeScan: closeScan,
 	}, nil
 }
 
@@ -69,6 +73,9 @@ func (s *ServiceContext) Close() {
 		if err := s.Scheduler.Shutdown(); err != nil {
 			slog.Error("shutdown scheduler", "err", err)
 		}
+	}
+	if s.closeScan != nil {
+		s.closeScan()
 	}
 	if s.Eth != nil {
 		s.Eth.Close()

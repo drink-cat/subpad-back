@@ -77,23 +77,36 @@ func TestStoreCRUD(t *testing.T) {
 
 	subpadID := int64(7)
 	token := &TokenInfo{
+		UserID:      3,
 		SubpadID:    &subpadID,
 		PoolID:      "pool-1",
 		Creator:     "0xcreator",
 		ChainID:     1,
-		TokenAddr:   "0xtoken",
 		TokenSymbol: "AAA",
 	}
 	if err = store.TokenInfo.Create(ctx, token); err != nil {
 		t.Fatal(err)
 	}
 	chainID := 1
-	tokens, err := store.TokenInfo.List(ctx, TokenInfoFilter{ChainID: &chainID, PoolID: "pool-1"})
+	userID := int64(3)
+	tokens, err := store.TokenInfo.List(ctx, TokenInfoFilter{ChainID: &chainID, PoolID: "pool-1", UserID: &userID, TokenSymbol: "AAA"})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(tokens) != 1 || tokens[0].ChainID != 1 || tokens[0].SubpadID == nil || *tokens[0].SubpadID != 7 {
+	if len(tokens) != 1 || tokens[0].ChainID != 1 || tokens[0].UserID != 3 || tokens[0].TokenAddr != "" || tokens[0].SubpadID == nil || *tokens[0].SubpadID != 7 {
 		t.Fatalf("tokens = %+v", tokens)
+	}
+	tokens[0].TokenAddr = "0xtoken"
+	tokens[0].PoolID = "pool-1"
+	if err = store.TokenInfo.Update(ctx, &tokens[0]); err != nil {
+		t.Fatal(err)
+	}
+	filled, err := store.TokenInfo.Get(ctx, token.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if filled.TokenAddr != "0xtoken" || filled.UserID != 3 {
+		t.Fatalf("token = %+v", filled)
 	}
 	empty := &TokenInfo{PoolID: "pool-empty"}
 	if err = store.TokenInfo.Create(ctx, empty); err != nil {
@@ -141,6 +154,38 @@ func TestStoreCRUD(t *testing.T) {
 	}
 	if len(fees) != 1 || fees[0].FeeAmount != 100 {
 		t.Fatalf("fees = %+v", fees)
+	}
+
+	buy := true
+	swap := &SwapInfo{
+		ChainID:        1,
+		PoolID:         "pool-1",
+		TxHash:         "0xswap",
+		LogIndex:       3,
+		Trader:         "0xtrader",
+		IsBuy:          true,
+		TokenAddr:      "0xtoken",
+		TokenAmount:    1000,
+		TokenDecimal:   18,
+		QuoteTokenAddr: "0xusdc",
+		QuoteAmount:    200,
+		Fee:            2,
+		QuoteDecimal:   6,
+		Price:          50,
+	}
+	if err = store.SwapInfo.Create(ctx, swap); err != nil {
+		t.Fatal(err)
+	}
+	dupSwap := &SwapInfo{ChainID: 1, TxHash: "0xswap", LogIndex: 3}
+	if err = store.SwapInfo.Create(ctx, dupSwap); err == nil {
+		t.Fatal("duplicate swap_info was inserted")
+	}
+	swaps, err := store.SwapInfo.List(ctx, SwapInfoFilter{Trader: "0xtrader", IsBuy: &buy, TokenAddr: "0xtoken"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(swaps) != 1 || swaps[0].QuoteAmount != 200 || swaps[0].Fee != 2 || !swaps[0].IsBuy {
+		t.Fatalf("swaps = %+v", swaps)
 	}
 
 	event := &SyncEvent{

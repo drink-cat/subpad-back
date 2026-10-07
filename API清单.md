@@ -244,15 +244,15 @@ Authorization: Bearer <jwtToken>
 
 ## POST /api/token_info/create
 
+发币时先写入一行。`userId` 由后端按当前登录用户写入，请求体里的 `userId` 不采用。此时 `tokenAddr` 等链上字段可以先空着。
+
 请求：
 
 ```json
 {
   "subpadId": 7,
-  "poolId": "pool-1",
   "creator": "0xcreator",
   "chainId": 1,
-  "tokenAddr": "0xtoken",
   "tokenName": "Demo",
   "tokenSymbol": "AAA",
   "quoteTokenAddr": "0xusdc",
@@ -272,11 +272,12 @@ Authorization: Bearer <jwtToken>
   "message": "ok",
   "data": {
     "id": 1,
+    "userId": 1,
     "subpadId": 7,
-    "poolId": "pool-1",
+    "poolId": "",
     "creator": "0xcreator",
     "chainId": 1,
-    "tokenAddr": "0xtoken",
+    "tokenAddr": "",
     "tokenName": "Demo",
     "tokenSymbol": "AAA",
     "quoteTokenAddr": "0xusdc",
@@ -288,6 +289,8 @@ Authorization: Bearer <jwtToken>
 ```
 
 ## POST /api/token_info/update
+
+合约日志到达后，用这条接口补上 `tokenAddr`、`poolId` 等字段。`userId` 保持创建时的值，请求体里的 `userId` 不采用。
 
 请求：
 
@@ -303,7 +306,7 @@ Authorization: Bearer <jwtToken>
   "tokenSymbol": "AAA",
   "quoteTokenAddr": "0xusdc",
   "quoteTokenSymbol": "USDC",
-  "launchSupply": 2000000,
+  "launchSupply": 1000000,
   "tickSpacing": 60
 }
 ```
@@ -316,6 +319,7 @@ Authorization: Bearer <jwtToken>
   "message": "ok",
   "data": {
     "id": 1,
+    "userId": 1,
     "subpadId": 7,
     "poolId": "pool-1",
     "creator": "0xcreator",
@@ -325,7 +329,7 @@ Authorization: Bearer <jwtToken>
     "tokenSymbol": "AAA",
     "quoteTokenAddr": "0xusdc",
     "quoteTokenSymbol": "USDC",
-    "launchSupply": 2000000,
+    "launchSupply": 1000000,
     "tickSpacing": 60
   }
 }
@@ -363,6 +367,7 @@ Authorization: Bearer <jwtToken>
   "message": "ok",
   "data": {
     "id": 1,
+    "userId": 1,
     "subpadId": 7,
     "poolId": "pool-1",
     "creator": "0xcreator",
@@ -380,7 +385,7 @@ Authorization: Bearer <jwtToken>
 
 ## GET /api/token_info/list
 
-请求：查询参数 `subpadId=7&poolId=pool-1&creator=0xcreator&chainId=1&tokenAddr=0xtoken&offset=0&limit=20`。筛选参数可不传。无 JSON 请求体。
+请求：查询参数 `userId=1&subpadId=7&poolId=pool-1&creator=0xcreator&chainId=1&tokenAddr=0xtoken&tokenSymbol=AAA&offset=0&limit=20`。筛选参数可不传。无 JSON 请求体。
 
 响应：
 
@@ -391,6 +396,7 @@ Authorization: Bearer <jwtToken>
   "data": [
     {
       "id": 1,
+      "userId": 1,
       "subpadId": 7,
       "poolId": "pool-1",
       "creator": "0xcreator",
@@ -708,6 +714,199 @@ Authorization: Bearer <jwtToken>
       "feeDecimal": 6,
       "feeAmount": 100,
       "feeTo": "0xfee",
+      "createdAt": "2026-10-07T15:09:00+08:00",
+      "updatedAt": "2026-10-07T15:09:00+08:00"
+    }
+  ]
+}
+```
+
+按 `id` 倒序。
+
+## POST /api/swap_info/create
+
+一次成交，对应合约事件 `SwapOnce`。`isBuy` 为 true 表示买入代币，`tokenAmount` 始终为正。`quoteAmount` 是扣费前的报价币，`fee` 从这笔报价币里扣出，单位与报价币相同。进出池子的报价币 = `quoteAmount - fee`。`price` 是这笔成交使用的曲线价格，不含本笔造成的变化。`chainId + txHash + logIndex` 唯一，重复写入返回 409。
+
+请求：
+
+```json
+{
+  "chainId": 1,
+  "poolId": "pool-1",
+  "txHash": "0xswap",
+  "logIndex": 3,
+  "trader": "0xtrader",
+  "isBuy": true,
+  "tokenAddr": "0xtoken",
+  "tokenAmount": 1000,
+  "tokenDecimal": 18,
+  "quoteTokenAddr": "0xusdc",
+  "quoteAmount": 200,
+  "fee": 2,
+  "quoteDecimal": 6,
+  "price": 50
+}
+```
+
+响应：
+
+```json
+{
+  "code": 0,
+  "message": "ok",
+  "data": {
+    "id": 1,
+    "chainId": 1,
+    "poolId": "pool-1",
+    "txHash": "0xswap",
+    "logIndex": 3,
+    "trader": "0xtrader",
+    "isBuy": true,
+    "tokenAddr": "0xtoken",
+    "tokenAmount": 1000,
+    "tokenDecimal": 18,
+    "quoteTokenAddr": "0xusdc",
+    "quoteAmount": 200,
+    "fee": 2,
+    "quoteDecimal": 6,
+    "price": 50,
+    "createdAt": "2026-10-07T15:09:00+08:00",
+    "updatedAt": "2026-10-07T15:09:00+08:00"
+  }
+}
+```
+
+## POST /api/swap_info/update
+
+请求：
+
+```json
+{
+  "id": 1,
+  "chainId": 1,
+  "poolId": "pool-1",
+  "txHash": "0xswap",
+  "logIndex": 3,
+  "trader": "0xtrader",
+  "isBuy": false,
+  "tokenAddr": "0xtoken",
+  "tokenAmount": 1000,
+  "tokenDecimal": 18,
+  "quoteTokenAddr": "0xusdc",
+  "quoteAmount": 180,
+  "fee": 2,
+  "quoteDecimal": 6,
+  "price": 48
+}
+```
+
+响应：
+
+```json
+{
+  "code": 0,
+  "message": "ok",
+  "data": {
+    "id": 1,
+    "chainId": 1,
+    "poolId": "pool-1",
+    "txHash": "0xswap",
+    "logIndex": 3,
+    "trader": "0xtrader",
+    "isBuy": false,
+    "tokenAddr": "0xtoken",
+    "tokenAmount": 1000,
+    "tokenDecimal": 18,
+    "quoteTokenAddr": "0xusdc",
+    "quoteAmount": 180,
+    "fee": 2,
+    "quoteDecimal": 6,
+    "price": 48,
+    "createdAt": "2026-10-07T15:09:00+08:00",
+    "updatedAt": "2026-10-07T16:00:00+08:00"
+  }
+}
+```
+
+## POST /api/swap_info/delete
+
+请求：
+
+```json
+{
+  "id": 1
+}
+```
+
+响应：
+
+```json
+{
+  "code": 0,
+  "message": "ok",
+  "data": null
+}
+```
+
+## GET /api/swap_info/get
+
+请求：查询参数 `id=1`。无 JSON 请求体。
+
+响应：
+
+```json
+{
+  "code": 0,
+  "message": "ok",
+  "data": {
+    "id": 1,
+    "chainId": 1,
+    "poolId": "pool-1",
+    "txHash": "0xswap",
+    "logIndex": 3,
+    "trader": "0xtrader",
+    "isBuy": true,
+    "tokenAddr": "0xtoken",
+    "tokenAmount": 1000,
+    "tokenDecimal": 18,
+    "quoteTokenAddr": "0xusdc",
+    "quoteAmount": 200,
+    "fee": 2,
+    "quoteDecimal": 6,
+    "price": 50,
+    "createdAt": "2026-10-07T15:09:00+08:00",
+    "updatedAt": "2026-10-07T15:09:00+08:00"
+  }
+}
+```
+
+## GET /api/swap_info/list
+
+请求：查询参数 `chainId=1&poolId=pool-1&txHash=0xswap&trader=0xtrader&isBuy=true&tokenAddr=0xtoken&offset=0&limit=20`。筛选参数可不传。无 JSON 请求体。
+
+响应：
+
+```json
+{
+  "code": 0,
+  "message": "ok",
+  "data": [
+    {
+      "id": 1,
+      "chainId": 1,
+      "poolId": "pool-1",
+      "txHash": "0xswap",
+      "logIndex": 3,
+      "trader": "0xtrader",
+      "isBuy": true,
+      "tokenAddr": "0xtoken",
+      "tokenAmount": 1000,
+      "tokenDecimal": 18,
+      "quoteTokenAddr": "0xusdc",
+      "quoteAmount": 200,
+      "fee": 2,
+      "quoteDecimal": 6,
+      "price": 50,
       "createdAt": "2026-10-07T15:09:00+08:00",
       "updatedAt": "2026-10-07T15:09:00+08:00"
     }

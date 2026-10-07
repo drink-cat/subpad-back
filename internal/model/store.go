@@ -8,6 +8,7 @@ type Store struct {
 	TokenInfo  *TokenInfoRepo
 	SubpadInfo *SubpadInfoRepo
 	FeeInfo    *FeeInfoRepo
+	SwapInfo   *SwapInfoRepo
 	SyncEvent  *SyncEventRepo
 	SyncCursor *SyncCursorRepo
 }
@@ -21,6 +22,7 @@ func NewStore(db *gorm.DB) *Store {
 		TokenInfo:  &TokenInfoRepo{db: db},
 		SubpadInfo: &SubpadInfoRepo{db: db},
 		FeeInfo:    &FeeInfoRepo{db: db},
+		SwapInfo:   &SwapInfoRepo{db: db},
 		SyncEvent:  &SyncEventRepo{db: db},
 		SyncCursor: &SyncCursorRepo{db: db},
 	}

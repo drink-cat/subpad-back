@@ -1,37 +1,33 @@
 package handler
 
 import (
-	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 
 	"github.com/drink-cat/subpad-back/internal/model"
 )
 
-func (h *Handler) createToken(c *gin.Context) {
+func (h *Handler) createSwap(c *gin.Context) {
 	store, ok := h.store(c)
 	if !ok {
 		return
 	}
-	var row model.TokenInfo
+	var row model.SwapInfo
 	if !bindJSON(c, &row) {
 		return
 	}
 	row.ID = 0
-	user, ok := CurrentUser(c)
-	if !ok {
-		fail(c, http.StatusUnauthorized, codeUnauthorized, "unauthorized")
-		return
-	}
-	row.UserID = user.ID
-	if err := store.TokenInfo.Create(c.Request.Context(), &row); err != nil {
+	row.CreatedAt = time.Time{}
+	row.UpdatedAt = time.Time{}
+	if err := store.SwapInfo.Create(c.Request.Context(), &row); err != nil {
 		writeErr(c, err)
 		return
 	}
 	okJSON(c, row)
 }
 
-func (h *Handler) getToken(c *gin.Context) {
+func (h *Handler) getSwap(c *gin.Context) {
 	store, ok := h.store(c)
 	if !ok {
 		return
@@ -40,7 +36,7 @@ func (h *Handler) getToken(c *gin.Context) {
 	if !ok {
 		return
 	}
-	row, err := store.TokenInfo.Get(c.Request.Context(), id)
+	row, err := store.SwapInfo.Get(c.Request.Context(), id)
 	if err != nil {
 		writeErr(c, err)
 		return
@@ -48,12 +44,12 @@ func (h *Handler) getToken(c *gin.Context) {
 	okJSON(c, row)
 }
 
-func (h *Handler) updateToken(c *gin.Context) {
+func (h *Handler) updateSwap(c *gin.Context) {
 	store, ok := h.store(c)
 	if !ok {
 		return
 	}
-	var row model.TokenInfo
+	var row model.SwapInfo
 	if !bindJSON(c, &row) {
 		return
 	}
@@ -61,20 +57,20 @@ func (h *Handler) updateToken(c *gin.Context) {
 		return
 	}
 	ctx := c.Request.Context()
-	old, err := store.TokenInfo.Get(ctx, row.ID)
+	old, err := store.SwapInfo.Get(ctx, row.ID)
 	if err != nil {
 		writeErr(c, err)
 		return
 	}
-	row.UserID = old.UserID
-	if err = store.TokenInfo.Update(ctx, &row); err != nil {
+	row.CreatedAt = old.CreatedAt
+	if err = store.SwapInfo.Update(ctx, &row); err != nil {
 		writeErr(c, err)
 		return
 	}
 	okJSON(c, row)
 }
 
-func (h *Handler) deleteToken(c *gin.Context) {
+func (h *Handler) deleteSwap(c *gin.Context) {
 	store, ok := h.store(c)
 	if !ok {
 		return
@@ -86,23 +82,23 @@ func (h *Handler) deleteToken(c *gin.Context) {
 	if !requireID(c, body.ID) {
 		return
 	}
-	if err := store.TokenInfo.Delete(c.Request.Context(), body.ID); err != nil {
+	if err := store.SwapInfo.Delete(c.Request.Context(), body.ID); err != nil {
 		writeErr(c, err)
 		return
 	}
 	okJSON(c, nil)
 }
 
-func (h *Handler) listToken(c *gin.Context) {
+func (h *Handler) listSwap(c *gin.Context) {
 	store, ok := h.store(c)
 	if !ok {
 		return
 	}
-	var f model.TokenInfoFilter
+	var f model.SwapInfoFilter
 	if !bindQuery(c, &f) {
 		return
 	}
-	rows, err := store.TokenInfo.List(c.Request.Context(), f)
+	rows, err := store.SwapInfo.List(c.Request.Context(), f)
 	if err != nil {
 		writeErr(c, err)
 		return

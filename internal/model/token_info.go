@@ -9,13 +9,14 @@ import (
 
 type TokenInfo struct {
 	ID               int64  `gorm:"primaryKey;autoIncrement" json:"id"`
+	UserID           int64  `gorm:"index:idx_token_info_user_id" json:"userId"`
 	SubpadID         *int64 `gorm:"index:idx_token_info_subpad_id" json:"subpadId"`
 	PoolID           string `gorm:"size:100;index:idx_token_info_pool_id" json:"poolId"`
 	Creator          string `gorm:"size:100;index:idx_token_info_creator" json:"creator"`
 	ChainID          int    `gorm:"column:chainid" json:"chainId"`
 	TokenAddr        string `gorm:"size:100;index:idx_token_info_token_addr" json:"tokenAddr"`
 	TokenName        string `gorm:"size:200" json:"tokenName"`
-	TokenSymbol      string `gorm:"size:64" json:"tokenSymbol"`
+	TokenSymbol      string `gorm:"size:64;index:idx_token_info_token_symbol" json:"tokenSymbol"`
 	QuoteTokenAddr   string `gorm:"size:100" json:"quoteTokenAddr"`
 	QuoteTokenSymbol string `gorm:"size:64" json:"quoteTokenSymbol"`
 	LaunchSupply     int64  `json:"launchSupply"`
@@ -25,11 +26,13 @@ type TokenInfo struct {
 func (TokenInfo) TableName() string { return "token_info" }
 
 type TokenInfoFilter struct {
-	SubpadID  *int64 `form:"subpadId"`
-	PoolID    string `form:"poolId"`
-	Creator   string `form:"creator"`
-	ChainID   *int   `form:"chainId"`
-	TokenAddr string `form:"tokenAddr"`
+	UserID      *int64 `form:"userId"`
+	SubpadID    *int64 `form:"subpadId"`
+	PoolID      string `form:"poolId"`
+	Creator     string `form:"creator"`
+	ChainID     *int   `form:"chainId"`
+	TokenAddr   string `form:"tokenAddr"`
+	TokenSymbol string `form:"tokenSymbol"`
 	Page
 }
 
@@ -58,6 +61,9 @@ func (r *TokenInfoRepo) Delete(ctx context.Context, id int64) error {
 
 func (r *TokenInfoRepo) List(ctx context.Context, f TokenInfoFilter) ([]TokenInfo, error) {
 	q := r.db.WithContext(ctx).Model(&TokenInfo{})
+	if f.UserID != nil {
+		q = q.Where("user_id = ?", *f.UserID)
+	}
 	if f.SubpadID != nil {
 		q = q.Where("subpad_id = ?", *f.SubpadID)
 	}
@@ -72,6 +78,9 @@ func (r *TokenInfoRepo) List(ctx context.Context, f TokenInfoFilter) ([]TokenInf
 	}
 	if f.TokenAddr != "" {
 		q = q.Where("token_addr = ?", f.TokenAddr)
+	}
+	if f.TokenSymbol != "" {
+		q = q.Where("token_symbol = ?", f.TokenSymbol)
 	}
 	rows := make([]TokenInfo, 0)
 	if err := f.Apply(q.Order("id DESC")).Find(&rows).Error; err != nil {

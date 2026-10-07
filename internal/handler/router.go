@@ -57,6 +57,12 @@ func NewRouter(sc *svc.ServiceContext) *gin.Engine {
 	authn.GET("/fee_info/get", h.getFee)
 	authn.GET("/fee_info/list", h.listFee)
 
+	authn.POST("/swap_info/create", h.createSwap)
+	authn.POST("/swap_info/update", h.updateSwap)
+	authn.POST("/swap_info/delete", h.deleteSwap)
+	authn.GET("/swap_info/get", h.getSwap)
+	authn.GET("/swap_info/list", h.listSwap)
+
 	authn.POST("/sync_event/create", h.createSyncEvent)
 	authn.POST("/sync_event/update", h.updateSyncEvent)
 	authn.POST("/sync_event/delete", h.deleteSyncEvent)

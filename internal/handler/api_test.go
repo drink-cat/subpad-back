@@ -106,17 +106,34 @@ func TestUserAndRelatedAPI(t *testing.T) {
 
 	subpadID := int64(7)
 	rec = perform(r, http.MethodPost, "/api/token_info/create", model.TokenInfo{
+		UserID:      99,
+		SubpadID:    &subpadID,
+		PoolID:      "pool-1",
+		Creator:     "0xcreator",
+		ChainID:     1,
+		TokenSymbol: "AAA",
+	})
+	token := decodeData[model.TokenInfo](t, rec)
+	if token.UserID != user.ID || token.TokenAddr != "" {
+		t.Fatalf("token = %+v", token)
+	}
+	rec = perform(r, http.MethodGet, "/api/token_info/list?poolId=pool-1&chainId=1&userId="+itoa(user.ID)+"&tokenSymbol=AAA", nil)
+	tokens := decodeData[[]model.TokenInfo](t, rec)
+	if len(tokens) != 1 || tokens[0].ID != token.ID || tokens[0].SubpadID == nil || *tokens[0].SubpadID != 7 {
+		t.Fatalf("tokens = %+v", tokens)
+	}
+	rec = perform(r, http.MethodPost, "/api/token_info/update", model.TokenInfo{
+		ID:        token.ID,
+		UserID:    99,
 		SubpadID:  &subpadID,
 		PoolID:    "pool-1",
 		Creator:   "0xcreator",
 		ChainID:   1,
 		TokenAddr: "0xtoken",
 	})
-	token := decodeData[model.TokenInfo](t, rec)
-	rec = perform(r, http.MethodGet, "/api/token_info/list?poolId=pool-1&chainId=1", nil)
-	tokens := decodeData[[]model.TokenInfo](t, rec)
-	if len(tokens) != 1 || tokens[0].ID != token.ID || tokens[0].SubpadID == nil || *tokens[0].SubpadID != 7 {
-		t.Fatalf("tokens = %+v", tokens)
+	filled := decodeData[model.TokenInfo](t, rec)
+	if filled.TokenAddr != "0xtoken" || filled.UserID != user.ID {
+		t.Fatalf("token = %+v", filled)
 	}
 
 	rec = perform(r, http.MethodPost, "/api/subpad_info/create", model.SubpadInfo{
@@ -168,6 +185,36 @@ func TestUserAndRelatedAPI(t *testing.T) {
 	fees := decodeData[[]model.FeeInfo](t, rec)
 	if len(fees) != 1 || fees[0].ID != fee.ID || fees[0].FeeAmount != 100 {
 		t.Fatalf("fees = %+v", fees)
+	}
+
+	rec = perform(r, http.MethodPost, "/api/swap_info/create", model.SwapInfo{
+		ChainID:      1,
+		PoolID:       "pool-1",
+		TxHash:       "0xswap",
+		LogIndex:     3,
+		Trader:       "0xtrader",
+		IsBuy:        true,
+		TokenAddr:    "0xtoken",
+		TokenAmount:  1000,
+		TokenDecimal: 18,
+		QuoteAmount:  200,
+		Fee:          2,
+		QuoteDecimal: 6,
+		Price:        50,
+	})
+	swap := decodeData[model.SwapInfo](t, rec)
+	rec = perform(r, http.MethodPost, "/api/swap_info/create", model.SwapInfo{
+		ChainID:  1,
+		TxHash:   "0xswap",
+		LogIndex: 3,
+	})
+	if rec.Code != http.StatusConflict {
+		t.Fatalf("duplicate swap status = %d body = %s", rec.Code, rec.Body.String())
+	}
+	rec = perform(r, http.MethodGet, "/api/swap_info/list?trader=0xtrader&isBuy=true&tokenAddr=0xtoken", nil)
+	swaps := decodeData[[]model.SwapInfo](t, rec)
+	if len(swaps) != 1 || swaps[0].ID != swap.ID || swaps[0].QuoteAmount != 200 || !swaps[0].IsBuy {
+		t.Fatalf("swaps = %+v", swaps)
 	}
 
 	rec = perform(r, http.MethodPost, "/api/sync_event/create", model.SyncEvent{
