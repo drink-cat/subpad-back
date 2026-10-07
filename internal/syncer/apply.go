@@ -3,7 +3,6 @@ package syncer
 import (
 	"context"
 	"errors"
-	"log/slog"
 
 	"github.com/ethereum/go-ethereum/core/types"
 	"gorm.io/gorm"
@@ -51,7 +50,6 @@ func applyTokenCreated(ctx context.Context, store *model.Store, chainID int, lg 
 			return err
 		}
 	}
-	slog.Info("applied event", "event", "TokenCreated", "chainId", chainID, "poolId", ev.PoolID, "token", ev.Token, "id", row.ID)
 	return nil
 }
 
@@ -99,7 +97,6 @@ func applyFeeCharged(ctx context.Context, store *model.Store, chainID int, lg ty
 			return err
 		}
 	}
-	slog.Info("applied event", "event", "FeeCharged", "chainId", chainID, "tx", txHash, "logIndex", logIndex, "feeType", ev.FeeType)
 	return nil
 }
 
@@ -140,6 +137,5 @@ func applySwapOnce(ctx context.Context, store *model.Store, chainID int, lg type
 			return err
 		}
 	}
-	slog.Info("applied event", "event", "SwapOnce", "chainId", chainID, "tx", txHash, "logIndex", logIndex, "isBuy", ev.IsBuy)
 	return nil
 }

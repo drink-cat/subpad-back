@@ -132,6 +132,7 @@ func Scan(ctx context.Context, client logClient, store *model.Store, cfg config.
 		return fmt.Errorf("scan %s logs %d-%d: %w", cfg.Name, from, to, err)
 	}
 	for _, lg := range logs {
+		logEvent(cfg.Name, chainID, lg)
 		if err = saveLog(ctx, store, chainID, lg); err != nil {
 			return fmt.Errorf("scan %s save log: %w", cfg.Name, err)
 		}
@@ -141,6 +142,78 @@ func Scan(ctx context.Context, client logClient, store *model.Store, cfg config.
 	}
 	slog.Info("scanned blocks", "name", cfg.Name, "chainId", chainID, "from", from, "to", to, "logs", len(logs))
 	return nil
+}
+
+func logEvent(chainName string, chainID int, lg types.Log) {
+	name := eventName(lg)
+	args := []any{
+		"chain", chainName,
+		"chainId", chainID,
+		"event", name,
+		"block", lg.BlockNumber,
+		"tx", lg.TxHash.Hex(),
+		"txIndex", lg.TxIndex,
+		"logIndex", lg.Index,
+		"contract", lg.Address.Hex(),
+		"removed", lg.Removed,
+	}
+	switch name {
+	case "TokenCreated":
+		ev, err := decodeTokenCreated(lg)
+		if err != nil {
+			args = append(args, "decodeErr", err)
+			break
+		}
+		args = append(args,
+			"poolId", ev.PoolID,
+			"creator", ev.Creator,
+			"token", ev.Token,
+			"tokenName", ev.Name,
+			"symbol", ev.Symbol,
+			"quoteToken", ev.QuoteToken,
+			"quoteSymbol", ev.QuoteSymbol,
+			"launchSupply", ev.LaunchSupply.String(),
+			"tickSpacing", ev.TickSpacing,
+		)
+	case "FeeCharged":
+		ev, err := decodeFeeCharged(lg)
+		if err != nil {
+			args = append(args, "decodeErr", err)
+			break
+		}
+		args = append(args,
+			"poolId", ev.PoolID,
+			"feeType", ev.FeeType,
+			"feeToken", ev.FeeToken,
+			"feeDecimal", ev.FeeDecimal,
+			"feeAmount", ev.FeeAmount.String(),
+			"feeTo", ev.FeeTo,
+		)
+	case "SwapOnce":
+		ev, err := decodeSwapOnce(lg)
+		if err != nil {
+			args = append(args, "decodeErr", err)
+			break
+		}
+		args = append(args,
+			"poolId", ev.PoolID,
+			"trader", ev.Trader,
+			"isBuy", ev.IsBuy,
+			"token", ev.Token,
+			"tokenAmount", ev.TokenAmount.String(),
+			"tokenDecimal", ev.TokenDecimal,
+			"quoteToken", ev.QuoteToken,
+			"quoteAmount", ev.QuoteAmount.String(),
+			"fee", ev.Fee.String(),
+			"quoteDecimal", ev.QuoteDecimal,
+			"price", ev.Price.String(),
+		)
+	default:
+		if len(lg.Topics) > 0 {
+			args = append(args, "topic0", lg.Topics[0].Hex())
+		}
+	}
+	slog.Info("chain event", args...)
 }
 
 func saveLog(ctx context.Context, store *model.Store, chainID int, lg types.Log) error {
