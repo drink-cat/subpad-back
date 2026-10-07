@@ -7,6 +7,7 @@ import (
 )
 
 type userBody struct {
+	ID       int64  `json:"id"`
 	Username string `json:"username"`
 	Password string `json:"password"`
 	FeeAddr  string `json:"fee_addr"`
@@ -38,7 +39,7 @@ func (h *Handler) getUser(c *gin.Context) {
 	if !ok {
 		return
 	}
-	id, ok := pathID(c)
+	id, ok := queryID(c)
 	if !ok {
 		return
 	}
@@ -55,18 +56,17 @@ func (h *Handler) updateUser(c *gin.Context) {
 	if !ok {
 		return
 	}
-	id, ok := pathID(c)
-	if !ok {
+	var body userBody
+	if !bindJSON(c, &body) {
+		return
+	}
+	if !requireID(c, body.ID) {
 		return
 	}
 	ctx := c.Request.Context()
-	row, err := store.UserInfo.Get(ctx, id)
+	row, err := store.UserInfo.Get(ctx, body.ID)
 	if err != nil {
 		writeErr(c, err)
-		return
-	}
-	var body userBody
-	if !bindJSON(c, &body) {
 		return
 	}
 	row.Username = body.Username
@@ -86,11 +86,14 @@ func (h *Handler) deleteUser(c *gin.Context) {
 	if !ok {
 		return
 	}
-	id, ok := pathID(c)
-	if !ok {
+	var body idBody
+	if !bindJSON(c, &body) {
 		return
 	}
-	if err := store.UserInfo.Delete(c.Request.Context(), id); err != nil {
+	if !requireID(c, body.ID) {
+		return
+	}
+	if err := store.UserInfo.Delete(c.Request.Context(), body.ID); err != nil {
 		writeErr(c, err)
 		return
 	}

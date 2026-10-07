@@ -28,19 +28,40 @@ func NewRouter(sc *svc.ServiceContext) *gin.Engine {
 	})
 
 	api := r.Group("/api")
-	mountCRUD(api, "/user_info", h.createUser, h.listUser, h.getUser, h.updateUser, h.deleteUser)
-	mountCRUD(api, "/token_info", h.createToken, h.listToken, h.getToken, h.updateToken, h.deleteToken)
-	mountCRUD(api, "/subpad_info", h.createSubpad, h.listSubpad, h.getSubpad, h.updateSubpad, h.deleteSubpad)
-	mountCRUD(api, "/fee_info", h.createFee, h.listFee, h.getFee, h.updateFee, h.deleteFee)
-	mountCRUD(api, "/sync_event", h.createSyncEvent, h.listSyncEvent, h.getSyncEvent, h.updateSyncEvent, h.deleteSyncEvent)
-	mountCRUD(api, "/sync_cursor", h.createSyncCursor, h.listSyncCursor, h.getSyncCursor, h.updateSyncCursor, h.deleteSyncCursor)
-	return r
-}
+	api.POST("/user_info/create", h.createUser)
+	api.POST("/user_info/update", h.updateUser)
+	api.POST("/user_info/delete", h.deleteUser)
+	api.GET("/user_info/get", h.getUser)
+	api.GET("/user_info/list", h.listUser)
 
-func mountCRUD(api *gin.RouterGroup, path string, create, list, get, update, del gin.HandlerFunc) {
-	api.POST(path, create)
-	api.GET(path, list)
-	api.GET(path+"/:id", get)
-	api.PUT(path+"/:id", update)
-	api.DELETE(path+"/:id", del)
+	api.POST("/token_info/create", h.createToken)
+	api.POST("/token_info/update", h.updateToken)
+	api.POST("/token_info/delete", h.deleteToken)
+	api.GET("/token_info/get", h.getToken)
+	api.GET("/token_info/list", h.listToken)
+
+	api.POST("/subpad_info/create", h.createSubpad)
+	api.POST("/subpad_info/update", h.updateSubpad)
+	api.POST("/subpad_info/delete", h.deleteSubpad)
+	api.GET("/subpad_info/get", h.getSubpad)
+	api.GET("/subpad_info/list", h.listSubpad)
+
+	api.POST("/fee_info/create", h.createFee)
+	api.POST("/fee_info/update", h.updateFee)
+	api.POST("/fee_info/delete", h.deleteFee)
+	api.GET("/fee_info/get", h.getFee)
+	api.GET("/fee_info/list", h.listFee)
+
+	api.POST("/sync_event/create", h.createSyncEvent)
+	api.POST("/sync_event/update", h.updateSyncEvent)
+	api.POST("/sync_event/delete", h.deleteSyncEvent)
+	api.GET("/sync_event/get", h.getSyncEvent)
+	api.GET("/sync_event/list", h.listSyncEvent)
+
+	api.POST("/sync_cursor/create", h.createSyncCursor)
+	api.POST("/sync_cursor/update", h.updateSyncCursor)
+	api.POST("/sync_cursor/delete", h.deleteSyncCursor)
+	api.GET("/sync_cursor/get", h.getSyncCursor)
+	api.GET("/sync_cursor/list", h.listSyncCursor)
+	return r
 }

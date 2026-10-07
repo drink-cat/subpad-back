@@ -22,7 +22,7 @@ import (
 
 func TestAPIWithoutMySQL(t *testing.T) {
 	r := testRouter(t, nil)
-	rec := perform(r, http.MethodGet, "/api/user_info/1", nil)
+	rec := perform(r, http.MethodGet, "/api/user_info/get?id=1", nil)
 	if rec.Code != http.StatusServiceUnavailable {
 		t.Fatalf("status = %d body = %s", rec.Code, rec.Body.String())
 	}
@@ -37,7 +37,7 @@ func TestUserAndRelatedAPI(t *testing.T) {
 	store := model.NewStore(db)
 	r := testRouter(t, store)
 
-	rec := perform(r, http.MethodPost, "/api/user_info", map[string]any{
+	rec := perform(r, http.MethodPost, "/api/user_info/create", map[string]any{
 		"username": "alice",
 		"password": "secret",
 		"fee_addr": "0xfee",
@@ -60,13 +60,14 @@ func TestUserAndRelatedAPI(t *testing.T) {
 		t.Fatalf("user = %+v", user)
 	}
 
-	rec = perform(r, http.MethodGet, "/api/user_info/"+itoa(user.ID), nil)
+	rec = perform(r, http.MethodGet, "/api/user_info/get?id="+itoa(user.ID), nil)
 	got := decodeData[model.UserInfo](t, rec)
 	if got.Username != "alice" {
 		t.Fatalf("username = %s", got.Username)
 	}
 
-	rec = perform(r, http.MethodPut, "/api/user_info/"+itoa(user.ID), map[string]any{
+	rec = perform(r, http.MethodPost, "/api/user_info/update", map[string]any{
+		"id":       user.ID,
 		"username": "alice",
 		"fee_addr": "0xnew",
 	})
@@ -82,19 +83,19 @@ func TestUserAndRelatedAPI(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	rec = perform(r, http.MethodGet, "/api/user_info?username=alice", nil)
+	rec = perform(r, http.MethodGet, "/api/user_info/list?username=alice", nil)
 	users := decodeData[[]model.UserInfo](t, rec)
 	if len(users) != 1 {
 		t.Fatalf("users = %d", len(users))
 	}
 
-	rec = perform(r, http.MethodPost, "/api/user_info", map[string]any{"username": "bob"})
+	rec = perform(r, http.MethodPost, "/api/user_info/create", map[string]any{"username": "bob"})
 	if rec.Code != http.StatusBadRequest {
 		t.Fatalf("missing password status = %d body = %s", rec.Code, rec.Body.String())
 	}
 
 	subpadID := int64(7)
-	rec = perform(r, http.MethodPost, "/api/token_info", model.TokenInfo{
+	rec = perform(r, http.MethodPost, "/api/token_info/create", model.TokenInfo{
 		SubpadID:  &subpadID,
 		PoolID:    "pool-1",
 		Creator:   "0xcreator",
@@ -102,13 +103,13 @@ func TestUserAndRelatedAPI(t *testing.T) {
 		TokenAddr: "0xtoken",
 	})
 	token := decodeData[model.TokenInfo](t, rec)
-	rec = perform(r, http.MethodGet, "/api/token_info?pool_id=pool-1&chainid=1", nil)
+	rec = perform(r, http.MethodGet, "/api/token_info/list?pool_id=pool-1&chainid=1", nil)
 	tokens := decodeData[[]model.TokenInfo](t, rec)
 	if len(tokens) != 1 || tokens[0].ID != token.ID || tokens[0].SubpadID == nil || *tokens[0].SubpadID != 7 {
 		t.Fatalf("tokens = %+v", tokens)
 	}
 
-	rec = perform(r, http.MethodPost, "/api/subpad_info", model.SubpadInfo{
+	rec = perform(r, http.MethodPost, "/api/subpad_info/create", model.SubpadInfo{
 		UserID:   3,
 		Brand:    "demo",
 		NameFull: "Demo Pad",
@@ -119,12 +120,13 @@ func TestUserAndRelatedAPI(t *testing.T) {
 	if subpad.CreatedAt.IsZero() || subpad.SwapType != model.SwapTypeMock {
 		t.Fatalf("subpad = %+v", subpad)
 	}
-	rec = perform(r, http.MethodGet, "/api/subpad_info?swap_type="+model.SwapTypeMock, nil)
+	rec = perform(r, http.MethodGet, "/api/subpad_info/list?swap_type="+model.SwapTypeMock, nil)
 	subpads := decodeData[[]model.SubpadInfo](t, rec)
 	if len(subpads) != 1 || subpads[0].ID != subpad.ID {
 		t.Fatalf("subpads = %+v", subpads)
 	}
-	rec = perform(r, http.MethodPut, "/api/subpad_info/"+itoa(subpad.ID), model.SubpadInfo{
+	rec = perform(r, http.MethodPost, "/api/subpad_info/update", model.SubpadInfo{
+		ID:          subpad.ID,
 		UserID:      3,
 		Brand:       "demo",
 		NameFull:    "Demo Pad 2",
@@ -140,7 +142,7 @@ func TestUserAndRelatedAPI(t *testing.T) {
 		t.Fatalf("subpad = %+v", changed)
 	}
 
-	rec = perform(r, http.MethodPost, "/api/fee_info", model.FeeInfo{
+	rec = perform(r, http.MethodPost, "/api/fee_info/create", model.FeeInfo{
 		ChainID:    1,
 		PoolID:     "pool-1",
 		TxHash:     "0xtx",
@@ -150,13 +152,13 @@ func TestUserAndRelatedAPI(t *testing.T) {
 		FeeTo:      "0xfee",
 	})
 	fee := decodeData[model.FeeInfo](t, rec)
-	rec = perform(r, http.MethodGet, "/api/fee_info?fee_to=0xfee&fee_type=platform", nil)
+	rec = perform(r, http.MethodGet, "/api/fee_info/list?fee_to=0xfee&fee_type=platform", nil)
 	fees := decodeData[[]model.FeeInfo](t, rec)
 	if len(fees) != 1 || fees[0].ID != fee.ID || fees[0].FeeAmount != 100 {
 		t.Fatalf("fees = %+v", fees)
 	}
 
-	rec = perform(r, http.MethodPost, "/api/sync_event", model.SyncEvent{
+	rec = perform(r, http.MethodPost, "/api/sync_event/create", model.SyncEvent{
 		ChainID:      1,
 		BlockNumber:  10,
 		TxHash:       "0xhash",
@@ -164,7 +166,7 @@ func TestUserAndRelatedAPI(t *testing.T) {
 		ContractAddr: "0xcontract",
 	})
 	event := decodeData[model.SyncEvent](t, rec)
-	rec = perform(r, http.MethodPost, "/api/sync_event", model.SyncEvent{
+	rec = perform(r, http.MethodPost, "/api/sync_event/create", model.SyncEvent{
 		ChainID:  1,
 		TxHash:   "0xhash",
 		LogIndex: 2,
@@ -172,7 +174,8 @@ func TestUserAndRelatedAPI(t *testing.T) {
 	if rec.Code != http.StatusConflict {
 		t.Fatalf("duplicate status = %d body = %s", rec.Code, rec.Body.String())
 	}
-	rec = perform(r, http.MethodPut, "/api/sync_event/"+itoa(event.ID), model.SyncEvent{
+	rec = perform(r, http.MethodPost, "/api/sync_event/update", model.SyncEvent{
+		ID:           event.ID,
 		ChainID:      1,
 		BlockNumber:  10,
 		TxHash:       "0xhash",
@@ -185,29 +188,29 @@ func TestUserAndRelatedAPI(t *testing.T) {
 		t.Fatalf("event = %+v", marked)
 	}
 
-	rec = perform(r, http.MethodPost, "/api/sync_cursor", model.SyncCursor{ChainID: 1, BlockNumber: 100})
+	rec = perform(r, http.MethodPost, "/api/sync_cursor/create", model.SyncCursor{ChainID: 1, BlockNumber: 100})
 	cursor := decodeData[model.SyncCursor](t, rec)
-	rec = perform(r, http.MethodPut, "/api/sync_cursor/"+itoa(cursor.ID), model.SyncCursor{ChainID: 1, BlockNumber: 250})
+	rec = perform(r, http.MethodPost, "/api/sync_cursor/update", model.SyncCursor{ID: cursor.ID, ChainID: 1, BlockNumber: 250})
 	moved := decodeData[model.SyncCursor](t, rec)
 	if moved.BlockNumber != 250 || !moved.CreatedAt.Equal(cursor.CreatedAt) {
 		t.Fatalf("cursor = %+v", moved)
 	}
-	rec = perform(r, http.MethodGet, "/api/sync_cursor?chainid=1", nil)
+	rec = perform(r, http.MethodGet, "/api/sync_cursor/list?chainid=1", nil)
 	cursors := decodeData[[]model.SyncCursor](t, rec)
 	if len(cursors) != 1 || cursors[0].BlockNumber != 250 {
 		t.Fatalf("cursors = %+v", cursors)
 	}
 
-	rec = perform(r, http.MethodDelete, "/api/user_info/"+itoa(user.ID), nil)
+	rec = perform(r, http.MethodPost, "/api/user_info/delete", map[string]any{"id": user.ID})
 	deleted := decodeResp(t, rec)
 	if deleted.Code != codeOK || string(deleted.Data) != "null" {
 		t.Fatalf("delete body = %s", rec.Body.String())
 	}
-	rec = perform(r, http.MethodGet, "/api/user_info/"+itoa(user.ID), nil)
+	rec = perform(r, http.MethodGet, "/api/user_info/get?id="+itoa(user.ID), nil)
 	if rec.Code != http.StatusNotFound {
 		t.Fatalf("get deleted status = %d body = %s", rec.Code, rec.Body.String())
 	}
-	rec = perform(r, http.MethodGet, "/api/user_info/abc", nil)
+	rec = perform(r, http.MethodGet, "/api/user_info/get?id=abc", nil)
 	if rec.Code != http.StatusBadRequest {
 		t.Fatalf("bad id status = %d", rec.Code)
 	}

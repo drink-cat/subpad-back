@@ -49,13 +49,25 @@ func (h *Handler) store(c *gin.Context) (*model.Store, bool) {
 	return h.sc.Store, true
 }
 
-func pathID(c *gin.Context) (int64, bool) {
-	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
+type idBody struct {
+	ID int64 `json:"id"`
+}
+
+func queryID(c *gin.Context) (int64, bool) {
+	id, err := strconv.ParseInt(c.Query("id"), 10, 64)
 	if err != nil || id <= 0 {
 		fail(c, http.StatusBadRequest, codeBadRequest, "invalid id")
 		return 0, false
 	}
 	return id, true
+}
+
+func requireID(c *gin.Context, id int64) bool {
+	if id <= 0 {
+		fail(c, http.StatusBadRequest, codeBadRequest, "invalid id")
+		return false
+	}
+	return true
 }
 
 func bindJSON(c *gin.Context, dst any) bool {

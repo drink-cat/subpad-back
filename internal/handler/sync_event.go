@@ -32,7 +32,7 @@ func (h *Handler) getSyncEvent(c *gin.Context) {
 	if !ok {
 		return
 	}
-	id, ok := pathID(c)
+	id, ok := queryID(c)
 	if !ok {
 		return
 	}
@@ -49,21 +49,19 @@ func (h *Handler) updateSyncEvent(c *gin.Context) {
 	if !ok {
 		return
 	}
-	id, ok := pathID(c)
-	if !ok {
-		return
-	}
-	ctx := c.Request.Context()
-	old, err := store.SyncEvent.Get(ctx, id)
-	if err != nil {
-		writeErr(c, err)
-		return
-	}
 	var row model.SyncEvent
 	if !bindJSON(c, &row) {
 		return
 	}
-	row.ID = id
+	if !requireID(c, row.ID) {
+		return
+	}
+	ctx := c.Request.Context()
+	old, err := store.SyncEvent.Get(ctx, row.ID)
+	if err != nil {
+		writeErr(c, err)
+		return
+	}
 	row.CreatedAt = old.CreatedAt
 	if err = store.SyncEvent.Update(ctx, &row); err != nil {
 		writeErr(c, err)
@@ -77,11 +75,14 @@ func (h *Handler) deleteSyncEvent(c *gin.Context) {
 	if !ok {
 		return
 	}
-	id, ok := pathID(c)
-	if !ok {
+	var body idBody
+	if !bindJSON(c, &body) {
 		return
 	}
-	if err := store.SyncEvent.Delete(c.Request.Context(), id); err != nil {
+	if !requireID(c, body.ID) {
+		return
+	}
+	if err := store.SyncEvent.Delete(c.Request.Context(), body.ID); err != nil {
 		writeErr(c, err)
 		return
 	}

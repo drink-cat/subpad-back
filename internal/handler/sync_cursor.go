@@ -32,7 +32,7 @@ func (h *Handler) getSyncCursor(c *gin.Context) {
 	if !ok {
 		return
 	}
-	id, ok := pathID(c)
+	id, ok := queryID(c)
 	if !ok {
 		return
 	}
@@ -49,21 +49,19 @@ func (h *Handler) updateSyncCursor(c *gin.Context) {
 	if !ok {
 		return
 	}
-	id, ok := pathID(c)
-	if !ok {
-		return
-	}
-	ctx := c.Request.Context()
-	old, err := store.SyncCursor.Get(ctx, id)
-	if err != nil {
-		writeErr(c, err)
-		return
-	}
 	var row model.SyncCursor
 	if !bindJSON(c, &row) {
 		return
 	}
-	row.ID = id
+	if !requireID(c, row.ID) {
+		return
+	}
+	ctx := c.Request.Context()
+	old, err := store.SyncCursor.Get(ctx, row.ID)
+	if err != nil {
+		writeErr(c, err)
+		return
+	}
 	row.CreatedAt = old.CreatedAt
 	if err = store.SyncCursor.Update(ctx, &row); err != nil {
 		writeErr(c, err)
@@ -77,11 +75,14 @@ func (h *Handler) deleteSyncCursor(c *gin.Context) {
 	if !ok {
 		return
 	}
-	id, ok := pathID(c)
-	if !ok {
+	var body idBody
+	if !bindJSON(c, &body) {
 		return
 	}
-	if err := store.SyncCursor.Delete(c.Request.Context(), id); err != nil {
+	if !requireID(c, body.ID) {
+		return
+	}
+	if err := store.SyncCursor.Delete(c.Request.Context(), body.ID); err != nil {
 		writeErr(c, err)
 		return
 	}

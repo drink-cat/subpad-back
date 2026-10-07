@@ -28,7 +28,7 @@ func (h *Handler) getToken(c *gin.Context) {
 	if !ok {
 		return
 	}
-	id, ok := pathID(c)
+	id, ok := queryID(c)
 	if !ok {
 		return
 	}
@@ -45,20 +45,14 @@ func (h *Handler) updateToken(c *gin.Context) {
 	if !ok {
 		return
 	}
-	id, ok := pathID(c)
-	if !ok {
-		return
-	}
-	ctx := c.Request.Context()
-	if _, err := store.TokenInfo.Get(ctx, id); err != nil {
-		writeErr(c, err)
-		return
-	}
 	var row model.TokenInfo
 	if !bindJSON(c, &row) {
 		return
 	}
-	row.ID = id
+	if !requireID(c, row.ID) {
+		return
+	}
+	ctx := c.Request.Context()
 	if err := store.TokenInfo.Update(ctx, &row); err != nil {
 		writeErr(c, err)
 		return
@@ -71,11 +65,14 @@ func (h *Handler) deleteToken(c *gin.Context) {
 	if !ok {
 		return
 	}
-	id, ok := pathID(c)
-	if !ok {
+	var body idBody
+	if !bindJSON(c, &body) {
 		return
 	}
-	if err := store.TokenInfo.Delete(c.Request.Context(), id); err != nil {
+	if !requireID(c, body.ID) {
+		return
+	}
+	if err := store.TokenInfo.Delete(c.Request.Context(), body.ID); err != nil {
 		writeErr(c, err)
 		return
 	}
