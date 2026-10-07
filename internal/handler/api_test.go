@@ -117,10 +117,10 @@ func TestUserAndRelatedAPI(t *testing.T) {
 	if token.UserID != user.ID || token.TokenAddr != "" {
 		t.Fatalf("token = %+v", token)
 	}
-	rec = perform(r, http.MethodGet, "/api/token_info/list?poolId=pool-1&chainId=1&userId="+itoa(user.ID)+"&tokenSymbol=AAA", nil)
+	rec = perform(r, http.MethodGet, "/api/token_info/list?poolId=pool-1&chainId=1&userId="+itoa(user.ID)+"&tokenSymbol=AAA&subpadId=7", nil)
 	tokens := decodeData[[]model.TokenInfo](t, rec)
-	if len(tokens) != 1 || tokens[0].ID != token.ID || tokens[0].SubpadID == nil || *tokens[0].SubpadID != 7 {
-		t.Fatalf("tokens = %+v", tokens)
+	if len(tokens) != 0 {
+		t.Fatalf("default pad should not return subpad 7, tokens = %+v", tokens)
 	}
 	rec = perform(r, http.MethodPost, "/api/token_info/update", model.TokenInfo{
 		ID:        token.ID,
@@ -278,6 +278,58 @@ func TestUserAndRelatedAPI(t *testing.T) {
 	rec = perform(r, http.MethodGet, "/health", nil)
 	if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), `"status":"ok"`) {
 		t.Fatalf("health = %d %s", rec.Code, rec.Body.String())
+	}
+}
+
+func TestListTokenScopedToSubpad(t *testing.T) {
+	db := testDB(t)
+	store := model.NewStore(db)
+	jwt := ""
+	r := &tokenHandler{next: testRouter(t, store), token: &jwt}
+
+	perform(r, http.MethodPost, "/api/user_info/create", map[string]any{
+		"username": "alice",
+		"password": "secret",
+	})
+	session := decodeData[loginData](t, perform(r, http.MethodPost, "/api/user_info/login", map[string]any{
+		"username": "alice",
+		"password": "secret",
+	}))
+	jwt = session.JwtToken
+
+	subpad := decodeData[model.SubpadInfo](t, perform(r, http.MethodPost, "/api/subpad_info/create", model.SubpadInfo{
+		Brand:    "foods",
+		NameFull: "Foods",
+		Status:   1,
+		SwapType: model.SwapTypeMock,
+	}))
+	zero := int64(0)
+	defaultToken := decodeData[model.TokenInfo](t, perform(r, http.MethodPost, "/api/token_info/create", model.TokenInfo{
+		SubpadID:    &zero,
+		TokenSymbol: "DEF",
+	}))
+	padToken := decodeData[model.TokenInfo](t, perform(r, http.MethodPost, "/api/token_info/create", model.TokenInfo{
+		SubpadID:    &subpad.ID,
+		TokenSymbol: "FOOD",
+	}))
+	other := int64(99)
+	decodeData[model.TokenInfo](t, perform(r, http.MethodPost, "/api/token_info/create", model.TokenInfo{
+		SubpadID:    &other,
+		TokenSymbol: "OTHER",
+	}))
+
+	tokens := decodeData[[]model.TokenInfo](t, perform(r, http.MethodGet, "/api/token_info/list?subpadId="+itoa(subpad.ID), nil))
+	if len(tokens) != 1 || tokens[0].ID != defaultToken.ID || tokens[0].SubpadID == nil || *tokens[0].SubpadID != 0 {
+		t.Fatalf("default pad tokens = %+v", tokens)
+	}
+
+	req := httptest.NewRequest(http.MethodGet, "/api/token_info/list?subpadId=0", nil)
+	req.Host = "foods.launch.o1.local"
+	rec := httptest.NewRecorder()
+	r.ServeHTTP(rec, req)
+	tokens = decodeData[[]model.TokenInfo](t, rec)
+	if len(tokens) != 1 || tokens[0].ID != padToken.ID || tokens[0].SubpadID == nil || *tokens[0].SubpadID != subpad.ID {
+		t.Fatalf("foods tokens = %+v", tokens)
 	}
 }
 

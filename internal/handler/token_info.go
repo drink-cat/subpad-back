@@ -102,6 +102,12 @@ func (h *Handler) listToken(c *gin.Context) {
 	if !bindQuery(c, &f) {
 		return
 	}
+	// 只返回当前域名对应的 subpad。没有子域名前缀时是默认 pad，subpad_id 为 0。
+	subpadID := int64(0)
+	if subpad, ok := CurrentSubpad(c); ok {
+		subpadID = subpad.ID
+	}
+	f.SubpadID = &subpadID
 	rows, err := store.TokenInfo.List(c.Request.Context(), f)
 	if err != nil {
 		writeErr(c, err)
