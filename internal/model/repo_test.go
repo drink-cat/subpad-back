@@ -107,7 +107,7 @@ func TestStoreCRUD(t *testing.T) {
 		t.Fatalf("subpad_id = %v", *empty.SubpadID)
 	}
 
-	subpad := &SubpadInfo{UserID: 3, Brand: "demo", NameFull: "Demo Pad", Status: 1}
+	subpad := &SubpadInfo{UserID: 3, Brand: "demo", NameFull: "Demo Pad", Status: 1, SwapType: SwapTypeMock}
 	if err = store.SubpadInfo.Create(ctx, subpad); err != nil {
 		t.Fatal(err)
 	}
@@ -118,8 +118,8 @@ func TestStoreCRUD(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if byBrand.NameFull != "Demo Pad" {
-		t.Fatalf("name_full = %s", byBrand.NameFull)
+	if byBrand.NameFull != "Demo Pad" || byBrand.SwapType != SwapTypeMock {
+		t.Fatalf("subpad = %+v", byBrand)
 	}
 
 	fee := &FeeInfo{

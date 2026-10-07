@@ -113,24 +113,31 @@ func TestUserAndRelatedAPI(t *testing.T) {
 		Brand:    "demo",
 		NameFull: "Demo Pad",
 		Status:   1,
+		SwapType: model.SwapTypeMock,
 	})
 	subpad := decodeData[model.SubpadInfo](t, rec)
-	if subpad.CreatedAt.IsZero() {
-		t.Fatal("created_at was not set")
+	if subpad.CreatedAt.IsZero() || subpad.SwapType != model.SwapTypeMock {
+		t.Fatalf("subpad = %+v", subpad)
+	}
+	rec = perform(r, http.MethodGet, "/api/subpad_info?swap_type="+model.SwapTypeMock, nil)
+	subpads := decodeData[[]model.SubpadInfo](t, rec)
+	if len(subpads) != 1 || subpads[0].ID != subpad.ID {
+		t.Fatalf("subpads = %+v", subpads)
 	}
 	rec = perform(r, http.MethodPut, "/api/subpad_info/"+itoa(subpad.ID), model.SubpadInfo{
 		UserID:      3,
 		Brand:       "demo",
 		NameFull:    "Demo Pad 2",
 		Status:      1,
+		SwapType:    model.SwapTypeUni,
 		Description: "detail",
 	})
 	changed := decodeData[model.SubpadInfo](t, rec)
 	if !changed.CreatedAt.Equal(subpad.CreatedAt) {
 		t.Fatalf("created_at changed from %s to %s", subpad.CreatedAt, changed.CreatedAt)
 	}
-	if changed.NameFull != "Demo Pad 2" {
-		t.Fatalf("name_full = %s", changed.NameFull)
+	if changed.NameFull != "Demo Pad 2" || changed.SwapType != model.SwapTypeUni {
+		t.Fatalf("subpad = %+v", changed)
 	}
 
 	rec = perform(r, http.MethodPost, "/api/fee_info", model.FeeInfo{

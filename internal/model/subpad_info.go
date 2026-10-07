@@ -8,6 +8,11 @@ import (
 	"gorm.io/gorm"
 )
 
+const (
+	SwapTypeMock = "mockSwap"
+	SwapTypeUni  = "uniSwap"
+)
+
 type SubpadInfo struct {
 	ID          int64     `gorm:"primaryKey;autoIncrement" json:"id"`
 	UserID      int64     `gorm:"index:idx_subpad_info_user_id" json:"user_id"`
@@ -15,6 +20,7 @@ type SubpadInfo struct {
 	Brand       string    `gorm:"size:100;index:idx_subpad_info_brand" json:"brand"`
 	NameFull    string    `gorm:"size:200" json:"name_full"`
 	Status      int       `json:"status"`
+	SwapType    string    `gorm:"size:32" json:"swap_type"`
 	Description string    `gorm:"type:text" json:"description"`
 	CreatedAt   time.Time `gorm:"type:datetime" json:"created_at"`
 	UpdatedAt   time.Time `gorm:"type:datetime" json:"updated_at"`
@@ -23,9 +29,10 @@ type SubpadInfo struct {
 func (SubpadInfo) TableName() string { return "subpad_info" }
 
 type SubpadInfoFilter struct {
-	UserID *int64 `form:"user_id"`
-	Brand  string `form:"brand"`
-	Status *int   `form:"status"`
+	UserID   *int64 `form:"user_id"`
+	Brand    string `form:"brand"`
+	Status   *int   `form:"status"`
+	SwapType string `form:"swap_type"`
 	Page
 }
 
@@ -74,6 +81,9 @@ func (r *SubpadInfoRepo) List(ctx context.Context, f SubpadInfoFilter) ([]Subpad
 	}
 	if f.Status != nil {
 		q = q.Where("status = ?", *f.Status)
+	}
+	if f.SwapType != "" {
+		q = q.Where("swap_type = ?", f.SwapType)
 	}
 	rows := make([]SubpadInfo, 0)
 	if err := f.Apply(q.Order("id DESC")).Find(&rows).Error; err != nil {
