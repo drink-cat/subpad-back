@@ -142,7 +142,7 @@ func TestStoreCRUD(t *testing.T) {
 		FeeType:    FeeTypePlatform,
 		FeeToken:   "0xusdc",
 		FeeDecimal: 6,
-		FeeAmount:  100,
+		FeeAmount:  NewAmount(100),
 		FeeTo:      "0xfee",
 	}
 	if err = store.FeeInfo.Create(ctx, fee); err != nil {
@@ -152,7 +152,7 @@ func TestStoreCRUD(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(fees) != 1 || fees[0].FeeAmount != 100 {
+	if len(fees) != 1 || !fees[0].FeeAmount.Equal(100) {
 		t.Fatalf("fees = %+v", fees)
 	}
 
@@ -165,13 +165,13 @@ func TestStoreCRUD(t *testing.T) {
 		Trader:         "0xtrader",
 		IsBuy:          true,
 		TokenAddr:      "0xtoken",
-		TokenAmount:    1000,
+		TokenAmount:    NewAmount(1000),
 		TokenDecimal:   18,
 		QuoteTokenAddr: "0xusdc",
-		QuoteAmount:    200,
-		Fee:            2,
+		QuoteAmount:    NewAmount(200),
+		Fee:            NewAmount(2),
 		QuoteDecimal:   6,
-		Price:          50,
+		Price:          NewAmount(50),
 	}
 	if err = store.SwapInfo.Create(ctx, swap); err != nil {
 		t.Fatal(err)
@@ -184,7 +184,7 @@ func TestStoreCRUD(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(swaps) != 1 || swaps[0].QuoteAmount != 200 || swaps[0].Fee != 2 || !swaps[0].IsBuy {
+	if len(swaps) != 1 || !swaps[0].QuoteAmount.Equal(200) || !swaps[0].Fee.Equal(2) || !swaps[0].IsBuy {
 		t.Fatalf("swaps = %+v", swaps)
 	}
 

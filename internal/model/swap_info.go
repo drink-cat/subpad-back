@@ -17,13 +17,13 @@ type SwapInfo struct {
 	Trader         string    `gorm:"size:100;index:idx_swap_info_trader" json:"trader"`
 	IsBuy          bool      `json:"isBuy"`
 	TokenAddr      string    `gorm:"size:100;index:idx_swap_info_token_addr" json:"tokenAddr"`
-	TokenAmount    int64     `json:"tokenAmount"`
+	TokenAmount    Amount    `gorm:"type:varchar(80)" json:"tokenAmount"`
 	TokenDecimal   int       `json:"tokenDecimal"`
 	QuoteTokenAddr string    `gorm:"size:100" json:"quoteTokenAddr"`
-	QuoteAmount    int64     `json:"quoteAmount"`
-	Fee            int64     `json:"fee"`
+	QuoteAmount    Amount    `gorm:"type:varchar(80)" json:"quoteAmount"`
+	Fee            Amount    `gorm:"type:varchar(80)" json:"fee"`
 	QuoteDecimal   int       `json:"quoteDecimal"`
-	Price          int64     `json:"price"`
+	Price          Amount    `gorm:"type:varchar(80)" json:"price"`
 	CreatedAt      time.Time `gorm:"type:datetime" json:"createdAt"`
 	UpdatedAt      time.Time `gorm:"type:datetime" json:"updatedAt"`
 }
@@ -50,6 +50,20 @@ func (r *SwapInfoRepo) Create(ctx context.Context, row *SwapInfo) error {
 
 func (r *SwapInfoRepo) Get(ctx context.Context, id int64) (*SwapInfo, error) {
 	return getRow[SwapInfo](ctx, r.db, "swap_info", id)
+}
+
+func (r *SwapInfoRepo) GetByLog(ctx context.Context, chainID int, txHash string, logIndex int) (*SwapInfo, error) {
+	if txHash == "" {
+		return nil, fmt.Errorf("get swap_info: tx_hash is required")
+	}
+	var row SwapInfo
+	err := r.db.WithContext(ctx).
+		Where("chainid = ? AND tx_hash = ? AND log_index = ?", chainID, txHash, logIndex).
+		First(&row).Error
+	if err != nil {
+		return nil, fmt.Errorf("get swap_info: %w", err)
+	}
+	return &row, nil
 }
 
 func (r *SwapInfoRepo) Update(ctx context.Context, row *SwapInfo) error {

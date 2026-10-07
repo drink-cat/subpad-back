@@ -13,6 +13,9 @@ func AutoMigrate(db *gorm.DB) error {
 	if err := renameSubpadFeeAddr(db); err != nil {
 		return err
 	}
+	if err := widenAmountColumns(db); err != nil {
+		return err
+	}
 	err := db.AutoMigrate(
 		&UserInfo{},
 		&TokenInfo{},
@@ -54,6 +57,49 @@ func renameSubpadFeeAddr(db *gorm.DB) error {
 		if err = db.Exec("ALTER TABLE `subpad_info` DROP COLUMN `user_addr`").Error; err != nil {
 			return fmt.Errorf("drop subpad_info.user_addr: %w", err)
 		}
+	}
+	return nil
+}
+
+// widenAmountColumns 把已经建成 bigint 的金额列改成十进制字符串。链上 uint256 放不进 bigint。
+func widenAmountColumns(db *gorm.DB) error {
+	if db.Dialector.Name() != "mysql" {
+		return nil
+	}
+	columns := [][2]string{
+		{"token_info", "launch_supply"},
+		{"fee_info", "fee_amount"},
+		{"swap_info", "token_amount"},
+		{"swap_info", "quote_amount"},
+		{"swap_info", "fee"},
+		{"swap_info", "price"},
+	}
+	for _, item := range columns {
+		if err := widenAmountColumn(db, item[0], item[1]); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func widenAmountColumn(db *gorm.DB, table, column string) error {
+	if !db.Migrator().HasTable(table) || !db.Migrator().HasColumn(table, column) {
+		return nil
+	}
+	var dataType string
+	err := db.Raw(`
+		SELECT DATA_TYPE FROM information_schema.COLUMNS
+		WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?
+	`, table, column).Scan(&dataType).Error
+	if err != nil {
+		return fmt.Errorf("column type %s.%s: %w", table, column, err)
+	}
+	if dataType == "" || dataType == "varchar" {
+		return nil
+	}
+	err = db.Exec(fmt.Sprintf("ALTER TABLE `%s` MODIFY COLUMN `%s` varchar(80) NOT NULL", table, column)).Error
+	if err != nil {
+		return fmt.Errorf("widen %s.%s: %w", table, column, err)
 	}
 	return nil
 }

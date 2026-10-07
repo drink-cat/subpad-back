@@ -177,13 +177,13 @@ func TestUserAndRelatedAPI(t *testing.T) {
 		TxHash:     "0xtx",
 		FeeType:    model.FeeTypePlatform,
 		FeeDecimal: 6,
-		FeeAmount:  100,
+		FeeAmount:  model.NewAmount(100),
 		FeeTo:      "0xfee",
 	})
 	fee := decodeData[model.FeeInfo](t, rec)
 	rec = perform(r, http.MethodGet, "/api/fee_info/list?feeTo=0xfee&feeType=platform", nil)
 	fees := decodeData[[]model.FeeInfo](t, rec)
-	if len(fees) != 1 || fees[0].ID != fee.ID || fees[0].FeeAmount != 100 {
+	if len(fees) != 1 || fees[0].ID != fee.ID || !fees[0].FeeAmount.Equal(100) {
 		t.Fatalf("fees = %+v", fees)
 	}
 
@@ -195,12 +195,12 @@ func TestUserAndRelatedAPI(t *testing.T) {
 		Trader:       "0xtrader",
 		IsBuy:        true,
 		TokenAddr:    "0xtoken",
-		TokenAmount:  1000,
+		TokenAmount:  model.NewAmount(1000),
 		TokenDecimal: 18,
-		QuoteAmount:  200,
-		Fee:          2,
+		QuoteAmount:  model.NewAmount(200),
+		Fee:          model.NewAmount(2),
 		QuoteDecimal: 6,
-		Price:        50,
+		Price:        model.NewAmount(50),
 	})
 	swap := decodeData[model.SwapInfo](t, rec)
 	rec = perform(r, http.MethodPost, "/api/swap_info/create", model.SwapInfo{
@@ -213,7 +213,7 @@ func TestUserAndRelatedAPI(t *testing.T) {
 	}
 	rec = perform(r, http.MethodGet, "/api/swap_info/list?trader=0xtrader&isBuy=true&tokenAddr=0xtoken", nil)
 	swaps := decodeData[[]model.SwapInfo](t, rec)
-	if len(swaps) != 1 || swaps[0].ID != swap.ID || swaps[0].QuoteAmount != 200 || !swaps[0].IsBuy {
+	if len(swaps) != 1 || swaps[0].ID != swap.ID || !swaps[0].QuoteAmount.Equal(200) || !swaps[0].IsBuy {
 		t.Fatalf("swaps = %+v", swaps)
 	}
 

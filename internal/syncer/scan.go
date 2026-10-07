@@ -144,6 +144,11 @@ func Scan(ctx context.Context, client logClient, store *model.Store, cfg config.
 }
 
 func saveLog(ctx context.Context, store *model.Store, chainID int, lg types.Log) error {
+	if !lg.Removed {
+		if err := applyLog(ctx, store, chainID, lg); err != nil {
+			return err
+		}
+	}
 	txHash := lg.TxHash.Hex()
 	logIndex := int(lg.Index)
 	_, err := store.SyncEvent.GetByLog(ctx, chainID, txHash, logIndex)
