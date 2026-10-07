@@ -35,7 +35,8 @@ func TestAPIWithoutMySQL(t *testing.T) {
 func TestUserAndRelatedAPI(t *testing.T) {
 	db := testDB(t)
 	store := model.NewStore(db)
-	r := testRouter(t, store)
+	jwt := ""
+	r := &tokenHandler{next: testRouter(t, store), token: &jwt}
 
 	rec := perform(r, http.MethodPost, "/api/user_info/create", map[string]any{
 		"username": "alice",
@@ -59,6 +60,15 @@ func TestUserAndRelatedAPI(t *testing.T) {
 	if user.ID == 0 || user.FeeAddr != "0xfee" {
 		t.Fatalf("user = %+v", user)
 	}
+
+	session := decodeData[loginData](t, perform(r, http.MethodPost, "/api/user_info/login", map[string]any{
+		"username": "alice",
+		"password": "secret",
+	}))
+	if session.JwtToken == "" {
+		t.Fatal("empty jwtToken")
+	}
+	jwt = session.JwtToken
 
 	rec = perform(r, http.MethodGet, "/api/user_info/get?id="+itoa(user.ID), nil)
 	got := decodeData[model.UserInfo](t, rec)
@@ -201,18 +211,19 @@ func TestUserAndRelatedAPI(t *testing.T) {
 		t.Fatalf("cursors = %+v", cursors)
 	}
 
+	rec = perform(r, http.MethodGet, "/api/user_info/get?id=abc", nil)
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("bad id status = %d", rec.Code)
+	}
+
 	rec = perform(r, http.MethodPost, "/api/user_info/delete", map[string]any{"id": user.ID})
 	deleted := decodeResp(t, rec)
 	if deleted.Code != codeOK || string(deleted.Data) != "null" {
 		t.Fatalf("delete body = %s", rec.Body.String())
 	}
 	rec = perform(r, http.MethodGet, "/api/user_info/get?id="+itoa(user.ID), nil)
-	if rec.Code != http.StatusNotFound {
+	if rec.Code != http.StatusUnauthorized {
 		t.Fatalf("get deleted status = %d body = %s", rec.Code, rec.Body.String())
-	}
-	rec = perform(r, http.MethodGet, "/api/user_info/get?id=abc", nil)
-	if rec.Code != http.StatusBadRequest {
-		t.Fatalf("bad id status = %d", rec.Code)
 	}
 
 	rec = perform(r, http.MethodGet, "/health", nil)
@@ -224,8 +235,12 @@ func TestUserAndRelatedAPI(t *testing.T) {
 func testRouter(t *testing.T, store *model.Store) *gin.Engine {
 	t.Helper()
 	return NewRouter(&svc.ServiceContext{
-		Config: &config.Config{Server: config.ServerConfig{Mode: gin.TestMode}},
-		Store:  store,
+		Config: &config.Config{
+			Server: config.ServerConfig{Mode: gin.TestMode},
+			JWT:    config.JWTConfig{Secret: "test-secret", ExpireHours: 1},
+			Domain: config.DomainConfig{Suffix: "launch.o1.local"},
+		},
+		Store: store,
 	})
 }
 
@@ -245,6 +260,18 @@ func testDB(t *testing.T) *gorm.DB {
 		t.Fatal(err)
 	}
 	return db
+}
+
+type tokenHandler struct {
+	next  http.Handler
+	token *string
+}
+
+func (h *tokenHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+	if h.token != nil && *h.token != "" {
+		req.Header.Set("Authorization", "Bearer "+*h.token)
+	}
+	h.next.ServeHTTP(w, req)
 }
 
 func perform(h http.Handler, method, target string, body any) *httptest.ResponseRecorder {

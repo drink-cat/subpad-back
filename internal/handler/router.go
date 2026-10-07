@@ -17,7 +17,7 @@ func NewRouter(sc *svc.ServiceContext) *gin.Engine {
 
 	h := &Handler{sc: sc}
 	r := gin.New()
-	r.Use(gin.Recovery())
+	r.Use(gin.Recovery(), h.DomainFilter())
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
 			"status": "ok",
@@ -28,40 +28,44 @@ func NewRouter(sc *svc.ServiceContext) *gin.Engine {
 	})
 
 	api := r.Group("/api")
+	api.POST("/user_info/login", h.login)
 	api.POST("/user_info/create", h.createUser)
-	api.POST("/user_info/update", h.updateUser)
-	api.POST("/user_info/delete", h.deleteUser)
-	api.GET("/user_info/get", h.getUser)
-	api.GET("/user_info/list", h.listUser)
 
-	api.POST("/token_info/create", h.createToken)
-	api.POST("/token_info/update", h.updateToken)
-	api.POST("/token_info/delete", h.deleteToken)
-	api.GET("/token_info/get", h.getToken)
-	api.GET("/token_info/list", h.listToken)
+	authn := api.Group("")
+	authn.Use(h.JwtFilter())
+	authn.POST("/user_info/update", h.updateUser)
+	authn.POST("/user_info/delete", h.deleteUser)
+	authn.GET("/user_info/get", h.getUser)
+	authn.GET("/user_info/list", h.listUser)
 
-	api.POST("/subpad_info/create", h.createSubpad)
-	api.POST("/subpad_info/update", h.updateSubpad)
-	api.POST("/subpad_info/delete", h.deleteSubpad)
-	api.GET("/subpad_info/get", h.getSubpad)
-	api.GET("/subpad_info/list", h.listSubpad)
+	authn.POST("/token_info/create", h.createToken)
+	authn.POST("/token_info/update", h.updateToken)
+	authn.POST("/token_info/delete", h.deleteToken)
+	authn.GET("/token_info/get", h.getToken)
+	authn.GET("/token_info/list", h.listToken)
 
-	api.POST("/fee_info/create", h.createFee)
-	api.POST("/fee_info/update", h.updateFee)
-	api.POST("/fee_info/delete", h.deleteFee)
-	api.GET("/fee_info/get", h.getFee)
-	api.GET("/fee_info/list", h.listFee)
+	authn.POST("/subpad_info/create", h.createSubpad)
+	authn.POST("/subpad_info/update", h.updateSubpad)
+	authn.POST("/subpad_info/delete", h.deleteSubpad)
+	authn.GET("/subpad_info/get", h.getSubpad)
+	authn.GET("/subpad_info/list", h.listSubpad)
 
-	api.POST("/sync_event/create", h.createSyncEvent)
-	api.POST("/sync_event/update", h.updateSyncEvent)
-	api.POST("/sync_event/delete", h.deleteSyncEvent)
-	api.GET("/sync_event/get", h.getSyncEvent)
-	api.GET("/sync_event/list", h.listSyncEvent)
+	authn.POST("/fee_info/create", h.createFee)
+	authn.POST("/fee_info/update", h.updateFee)
+	authn.POST("/fee_info/delete", h.deleteFee)
+	authn.GET("/fee_info/get", h.getFee)
+	authn.GET("/fee_info/list", h.listFee)
 
-	api.POST("/sync_cursor/create", h.createSyncCursor)
-	api.POST("/sync_cursor/update", h.updateSyncCursor)
-	api.POST("/sync_cursor/delete", h.deleteSyncCursor)
-	api.GET("/sync_cursor/get", h.getSyncCursor)
-	api.GET("/sync_cursor/list", h.listSyncCursor)
+	authn.POST("/sync_event/create", h.createSyncEvent)
+	authn.POST("/sync_event/update", h.updateSyncEvent)
+	authn.POST("/sync_event/delete", h.deleteSyncEvent)
+	authn.GET("/sync_event/get", h.getSyncEvent)
+	authn.GET("/sync_event/list", h.listSyncEvent)
+
+	authn.POST("/sync_cursor/create", h.createSyncCursor)
+	authn.POST("/sync_cursor/update", h.updateSyncCursor)
+	authn.POST("/sync_cursor/delete", h.deleteSyncCursor)
+	authn.GET("/sync_cursor/get", h.getSyncCursor)
+	authn.GET("/sync_cursor/list", h.listSyncCursor)
 	return r
 }

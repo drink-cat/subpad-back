@@ -16,7 +16,8 @@
 | --- | --- | --- |
 | 0 | 200 | 成功 |
 | 400 | 400 | 参数错误 |
-| 404 | 404 | 记录不存在 |
+| 401 | 401 | 未登录、令牌无效，或用户已不存在 |
+| 404 | 404 | 记录不存在。域名能解析出 brand，但 subpad 不存在时也是 404 |
 | 409 | 409 | 唯一约束冲突 |
 | 500 | 500 | 服务器错误 |
 | 503 | 503 | 未配置 MySQL |
@@ -33,6 +34,16 @@
 
 删除成功时 `data` 为 `null`。列表的 `limit` 小于等于 0 时按 20 条，最大 200。修改接口会整行替换，未传的字段按零值写入；带创建时间的表会保留原来的 `created_at`。
 
+除 `POST /api/user_info/login` 和 `POST /api/user_info/create` 外，`/api` 请求都要带登录令牌：
+
+```
+Authorization: Bearer <jwtToken>
+```
+
+`JwtFilter` 校验令牌后查 `user_info`，把当前用户放进请求上下文。令牌默认 72 小时有效。
+
+`DomainFilter` 读取 Host。形如 `foods.launch.o1.local` 时，取出 `foods`，按 `subpad_info.brand` 查询并放进请求上下文。主机名不带这个后缀时跳过，例如 `localhost`。后缀由配置 `domain.suffix` 指定，默认 `launch.o1.local`。
+
 ## GET /health
 
 请求：无。
@@ -45,6 +56,41 @@
   "mysql": true,
   "eth": false,
   "cron": true
+}
+```
+
+## POST /api/user_info/login
+
+不需要令牌。
+
+请求：
+
+```json
+{
+  "username": "alice",
+  "password": "secret"
+}
+```
+
+响应：
+
+```json
+{
+  "code": 0,
+  "message": "ok",
+  "data": {
+    "jwtToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+  }
+}
+```
+
+用户名或密码错误时：
+
+```json
+{
+  "code": 401,
+  "message": "invalid username or password",
+  "data": null
 }
 ```
 

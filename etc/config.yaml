@@ -7,6 +7,14 @@ server:
 mysql:
   dsn: "tom:123321@tcp(127.0.0.1:3306)/launch"
 
+jwt:
+  secret: "subpad-dev-secret"
+  expireHours: 72
+
+# 主机名 foods.launch.o1.local 中的 foods 作为 subpad.brand
+domain:
+  suffix: launch.o1.local
+
 # 示例：https://eth.llamarpc.com
 eth:
   rpc: ""

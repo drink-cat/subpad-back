@@ -10,6 +10,8 @@ import (
 type Config struct {
 	Server ServerConfig `mapstructure:"server"`
 	MySQL  MySQLConfig  `mapstructure:"mysql"`
+	JWT    JWTConfig    `mapstructure:"jwt"`
+	Domain DomainConfig `mapstructure:"domain"`
 	Eth    EthConfig    `mapstructure:"eth"`
 	Cron   CronConfig   `mapstructure:"cron"`
 }
@@ -22,6 +24,15 @@ type ServerConfig struct {
 
 type MySQLConfig struct {
 	DSN string `mapstructure:"dsn"`
+}
+
+type JWTConfig struct {
+	Secret      string `mapstructure:"secret"`
+	ExpireHours int    `mapstructure:"expireHours"`
+}
+
+type DomainConfig struct {
+	Suffix string `mapstructure:"suffix"`
 }
 
 type EthConfig struct {
@@ -62,6 +73,12 @@ func Load(path string) (*Config, error) {
 	}
 	if cfg.Server.Mode == "" {
 		cfg.Server.Mode = "debug"
+	}
+	if cfg.JWT.ExpireHours <= 0 {
+		cfg.JWT.ExpireHours = 72
+	}
+	if cfg.Domain.Suffix == "" {
+		cfg.Domain.Suffix = "launch.o1.local"
 	}
 	return &cfg, nil
 }

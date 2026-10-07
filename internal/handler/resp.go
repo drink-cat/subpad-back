@@ -15,12 +15,13 @@ import (
 )
 
 const (
-	codeOK          int64 = 0
-	codeBadRequest  int64 = 400
-	codeNotFound    int64 = 404
-	codeConflict    int64 = 409
-	codeInternal    int64 = 500
-	codeUnavailable int64 = 503
+	codeOK           int64 = 0
+	codeBadRequest   int64 = 400
+	codeNotFound     int64 = 404
+	codeConflict     int64 = 409
+	codeUnauthorized int64 = 401
+	codeInternal     int64 = 500
+	codeUnavailable  int64 = 503
 )
 
 type BaseResp struct {
