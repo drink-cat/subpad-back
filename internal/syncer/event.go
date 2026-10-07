@@ -187,46 +187,53 @@ func decodeSwapOnce(lg types.Log) (swapOnce, error) {
 	if len(lg.Topics) != 4 {
 		return swapOnce{}, fmt.Errorf("SwapOnce topics %d", len(lg.Topics))
 	}
-	var data struct {
-		IsBuy        bool           `abi:"isBuy"`
-		TokenAmount  *big.Int       `abi:"tokenAmount"`
-		TokenDecimal uint8          `abi:"tokenDecimal"`
-		QuoteToken   common.Address `abi:"quoteToken"`
-		QuoteAmount  *big.Int       `abi:"quoteAmount"`
-		Fee          *big.Int       `abi:"fee"`
-		QuoteDecimal uint8          `abi:"quoteDecimal"`
-		Price        *big.Int       `abi:"price"`
-	}
-	if err := ev.Inputs.NonIndexed().UnpackIntoInterface(&data, lg.Data); err != nil {
+	data, err := unpackData(ev, lg.Data)
+	if err != nil {
 		return swapOnce{}, fmt.Errorf("SwapOnce data: %w", err)
 	}
-	tokenAmount, err := model.NewAmountBig(data.TokenAmount)
+	isBuy, err := mapBool(data, "isBuy")
 	if err != nil {
-		return swapOnce{}, fmt.Errorf("SwapOnce tokenAmount: %w", err)
+		return swapOnce{}, err
 	}
-	quoteAmount, err := model.NewAmountBig(data.QuoteAmount)
+	tokenAmount, err := mapAmount(data, "tokenAmount")
 	if err != nil {
-		return swapOnce{}, fmt.Errorf("SwapOnce quoteAmount: %w", err)
+		return swapOnce{}, err
 	}
-	fee, err := model.NewAmountBig(data.Fee)
+	tokenDecimal, err := mapUint8(data, "tokenDecimal")
 	if err != nil {
-		return swapOnce{}, fmt.Errorf("SwapOnce fee: %w", err)
+		return swapOnce{}, err
 	}
-	price, err := model.NewAmountBig(data.Price)
+	quote, err := mapAddr(data, "quoteToken")
 	if err != nil {
-		return swapOnce{}, fmt.Errorf("SwapOnce price: %w", err)
+		return swapOnce{}, err
+	}
+	quoteAmount, err := mapAmount(data, "quoteAmount")
+	if err != nil {
+		return swapOnce{}, err
+	}
+	fee, err := mapAmount(data, "fee")
+	if err != nil {
+		return swapOnce{}, err
+	}
+	quoteDecimal, err := mapUint8(data, "quoteDecimal")
+	if err != nil {
+		return swapOnce{}, err
+	}
+	price, err := mapAmount(data, "price")
+	if err != nil {
+		return swapOnce{}, err
 	}
 	return swapOnce{
 		PoolID:       lg.Topics[1].Hex(),
 		Trader:       common.BytesToAddress(lg.Topics[2].Bytes()).Hex(),
-		IsBuy:        data.IsBuy,
+		IsBuy:        isBuy,
 		Token:        common.BytesToAddress(lg.Topics[3].Bytes()).Hex(),
 		TokenAmount:  tokenAmount,
-		TokenDecimal: int(data.TokenDecimal),
-		QuoteToken:   data.QuoteToken.Hex(),
+		TokenDecimal: int(tokenDecimal),
+		QuoteToken:   quote.Hex(),
 		QuoteAmount:  quoteAmount,
 		Fee:          fee,
-		QuoteDecimal: int(data.QuoteDecimal),
+		QuoteDecimal: int(quoteDecimal),
 		Price:        price,
 	}, nil
 }
@@ -244,13 +251,72 @@ func feeTypeName(v uint8) (string, error) {
 	}
 }
 
-func bigToInt(v *big.Int) (int, error) {
-	if v == nil || !v.IsInt64() {
-		return 0, fmt.Errorf("value %s does not fit int", v)
+func unpackData(ev abi.Event, data []byte) (map[string]any, error) {
+	out := make(map[string]any)
+	if err := ev.Inputs.NonIndexed().UnpackIntoMap(out, data); err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func mapString(m map[string]any, key string) (string, error) {
+	v, ok := m[key].(string)
+	if !ok {
+		return "", fmt.Errorf("%s type %T", key, m[key])
+	}
+	return v, nil
+}
+
+func mapAddr(m map[string]any, key string) (common.Address, error) {
+	v, ok := m[key].(common.Address)
+	if !ok {
+		return common.Address{}, fmt.Errorf("%s type %T", key, m[key])
+	}
+	return v, nil
+}
+
+func mapBool(m map[string]any, key string) (bool, error) {
+	v, ok := m[key].(bool)
+	if !ok {
+		return false, fmt.Errorf("%s type %T", key, m[key])
+	}
+	return v, nil
+}
+
+func mapUint8(m map[string]any, key string) (uint8, error) {
+	switch v := m[key].(type) {
+	case uint8:
+		return v, nil
+	case *big.Int:
+		if v == nil || !v.IsUint64() || v.Uint64() > 255 {
+			return 0, fmt.Errorf("%s %v", key, v)
+		}
+		return uint8(v.Uint64()), nil
+	default:
+		return 0, fmt.Errorf("%s type %T", key, m[key])
+	}
+}
+
+func mapAmount(m map[string]any, key string) (model.Amount, error) {
+	v, ok := m[key].(*big.Int)
+	if !ok {
+		return "", fmt.Errorf("%s type %T", key, m[key])
+	}
+	amount, err := model.NewAmountBig(v)
+	if err != nil {
+		return "", fmt.Errorf("%s: %w", key, err)
+	}
+	return amount, nil
+}
+
+func mapInt(m map[string]any, key string) (int, error) {
+	v, ok := m[key].(*big.Int)
+	if !ok || v == nil || !v.IsInt64() {
+		return 0, fmt.Errorf("%s type %T", key, m[key])
 	}
 	n := v.Int64()
 	if int64(int(n)) != n {
-		return 0, fmt.Errorf("value %s does not fit int", v)
+		return 0, fmt.Errorf("%s %s does not fit int", key, v)
 	}
 	return int(n), nil
 }
