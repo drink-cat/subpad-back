@@ -9,27 +9,27 @@ import (
 
 type TokenInfo struct {
 	ID               int64  `gorm:"primaryKey;autoIncrement" json:"id"`
-	SubpadID         *int64 `gorm:"index:idx_token_info_subpad_id" json:"subpad_id"`
-	PoolID           string `gorm:"size:100;index:idx_token_info_pool_id" json:"pool_id"`
+	SubpadID         *int64 `gorm:"index:idx_token_info_subpad_id" json:"subpadId"`
+	PoolID           string `gorm:"size:100;index:idx_token_info_pool_id" json:"poolId"`
 	Creator          string `gorm:"size:100;index:idx_token_info_creator" json:"creator"`
-	ChainID          int    `gorm:"column:chainid" json:"chainid"`
-	TokenAddr        string `gorm:"size:100;index:idx_token_info_token_addr" json:"token_addr"`
-	TokenName        string `gorm:"size:200" json:"token_name"`
-	TokenSymbol      string `gorm:"size:64" json:"token_symbol"`
-	QuoteTokenAddr   string `gorm:"size:100" json:"quote_token_addr"`
-	QuoteTokenSymbol string `gorm:"size:64" json:"quote_token_symbol"`
-	LaunchSupply     int64  `json:"launch_supply"`
-	TickSpacing      int    `json:"tick_spacing"`
+	ChainID          int    `gorm:"column:chainid" json:"chainId"`
+	TokenAddr        string `gorm:"size:100;index:idx_token_info_token_addr" json:"tokenAddr"`
+	TokenName        string `gorm:"size:200" json:"tokenName"`
+	TokenSymbol      string `gorm:"size:64" json:"tokenSymbol"`
+	QuoteTokenAddr   string `gorm:"size:100" json:"quoteTokenAddr"`
+	QuoteTokenSymbol string `gorm:"size:64" json:"quoteTokenSymbol"`
+	LaunchSupply     int64  `json:"launchSupply"`
+	TickSpacing      int    `json:"tickSpacing"`
 }
 
 func (TokenInfo) TableName() string { return "token_info" }
 
 type TokenInfoFilter struct {
-	SubpadID  *int64 `form:"subpad_id"`
-	PoolID    string `form:"pool_id"`
+	SubpadID  *int64 `form:"subpadId"`
+	PoolID    string `form:"poolId"`
 	Creator   string `form:"creator"`
-	ChainID   *int   `form:"chainid"`
-	TokenAddr string `form:"token_addr"`
+	ChainID   *int   `form:"chainId"`
+	TokenAddr string `form:"tokenAddr"`
 	Page
 }
 

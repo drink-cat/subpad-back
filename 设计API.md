@@ -2,6 +2,8 @@
 已有表，使用gin开发对应的API，增删改查等。
 path 加前缀 /api 
 method 只使用 GET POST 
+API的请求、响应，都要用 驼峰写法。
+
 
 返回的通用结构：
 type BaseResp struct {

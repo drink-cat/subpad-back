@@ -8,12 +8,14 @@ import (
 )
 
 type Config struct {
-	Server ServerConfig `mapstructure:"server"`
-	MySQL  MySQLConfig  `mapstructure:"mysql"`
-	JWT    JWTConfig    `mapstructure:"jwt"`
-	Domain DomainConfig `mapstructure:"domain"`
-	Eth    EthConfig    `mapstructure:"eth"`
-	Cron   CronConfig   `mapstructure:"cron"`
+	Server     ServerConfig     `mapstructure:"server"`
+	MySQL      MySQLConfig      `mapstructure:"mysql"`
+	JWT        JWTConfig        `mapstructure:"jwt"`
+	Domain     DomainConfig     `mapstructure:"domain"`
+	Eth        EthConfig        `mapstructure:"eth"`
+	QuoteToken QuoteTokenConfig `mapstructure:"quoteToken"`
+	SyncLog    []SyncLogConfig  `mapstructure:"synclog"`
+	Cron       CronConfig       `mapstructure:"cron"`
 }
 
 type ServerConfig struct {
@@ -38,6 +40,21 @@ type DomainConfig struct {
 type EthConfig struct {
 	RPC     string `mapstructure:"rpc"`
 	ChainID int64  `mapstructure:"chainId"`
+}
+
+type QuoteTokenConfig struct {
+	LocalUsdc   string `mapstructure:"localUsdc"`
+	SepoliaUsdc string `mapstructure:"sepoliaUsdc"`
+}
+
+type SyncLogConfig struct {
+	Name                 string `mapstructure:"name"`
+	ChainID              int64  `mapstructure:"chainId"`
+	RPCURL               string `mapstructure:"rpcUrl"`
+	BeginBlock           int64  `mapstructure:"beginBlock"`
+	Confirmations        int    `mapstructure:"confirmations"`
+	TimerIntervalSeconds int    `mapstructure:"timerIntervalSeconds"`
+	LaunchContract       string `mapstructure:"launchContract"`
 }
 
 type CronConfig struct {

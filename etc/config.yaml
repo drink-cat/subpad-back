@@ -5,7 +5,7 @@ server:
 
 # 示例：user:password@tcp(127.0.0.1:3306)/subpad?charset=utf8mb4&parseTime=True&loc=Local
 mysql:
-  dsn: "tom:123321@tcp(127.0.0.1:3306)/launch"
+  dsn: "tom:123321@tcp(127.0.0.1:3306)/launch?parseTime=true&loc=Local"
 
 jwt:
   secret: "subpad-dev-secret"
@@ -15,10 +15,30 @@ jwt:
 domain:
   suffix: launch.o1.local
 
-# 示例：https://eth.llamarpc.com
-eth:
-  rpc: ""
-  chainId: 1
-
 cron:
   enabled: true
+
+quoteToken:
+  localUsdc: 0xcB0f2a13098f8e841e6Adfa5B17Ec00508b27665
+  sepoliaUsdc: 0x5728d6521217108001057f09271311987e81d5a0
+
+synclog:  # 扫块 
+  - name: 本地网
+    chainId: 31337
+    rpcUrl: http://127.0.0.1:8545
+    beginBlock: 705
+    confirmations: 1
+    timerIntervalSeconds: 60
+    launchContract: 0x88D1aF96098a928eE278f162c1a84f339652f95b
+  - name: sepolia
+    chainId: 11155111
+    rpcUrl: https://eth-sepolia.g.alchemy.com/v2/umAjVzLoWaqMIxZh9OFn2
+    beginBlock: 11834432
+    confirmations: 12
+    timerIntervalSeconds: 60
+    launchContract: 0x111
+
+
+
+
+

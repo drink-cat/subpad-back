@@ -32,18 +32,69 @@ func renameSubpadFeeAddr(db *gorm.DB) error {
 	if !m.HasTable(&SubpadInfo{}) {
 		return nil
 	}
-	hasOld := m.HasColumn(&SubpadInfo{}, "user_addr")
-	hasNew := m.HasColumn(&SubpadInfo{}, "feeAddr")
-	if hasOld && !hasNew {
-		if err := m.RenameColumn(&SubpadInfo{}, "user_addr", "feeAddr"); err != nil {
-			return fmt.Errorf("rename subpad_info.user_addr: %w", err)
+	cols, err := tableColumns(db, "subpad_info")
+	if err != nil {
+		return err
+	}
+	_, hasSnake := cols["fee_addr"]
+	if _, ok := cols["feeAddr"]; ok && !hasSnake {
+		if err = renameColumn(db, "subpad_info", "feeAddr", "fee_addr"); err != nil {
+			return err
+		}
+		hasSnake = true
+	}
+	if _, ok := cols["user_addr"]; ok && !hasSnake {
+		if err = renameColumn(db, "subpad_info", "user_addr", "fee_addr"); err != nil {
+			return err
 		}
 		return nil
 	}
-	if hasOld && hasNew {
-		if err := m.DropColumn(&SubpadInfo{}, "user_addr"); err != nil {
+	if _, ok := cols["user_addr"]; ok {
+		if err = db.Exec("ALTER TABLE `subpad_info` DROP COLUMN `user_addr`").Error; err != nil {
 			return fmt.Errorf("drop subpad_info.user_addr: %w", err)
 		}
+	}
+	return nil
+}
+
+func tableColumns(db *gorm.DB, table string) (map[string]struct{}, error) {
+	var rows []struct {
+		Name string `gorm:"column:name"`
+	}
+	var err error
+	switch db.Dialector.Name() {
+	case "mysql":
+		err = db.Raw(`
+			SELECT COLUMN_NAME AS name FROM information_schema.COLUMNS
+			WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ?
+		`, table).Scan(&rows).Error
+	default:
+		err = db.Raw("SELECT name FROM pragma_table_info(?)", table).Scan(&rows).Error
+	}
+	if err != nil {
+		return nil, fmt.Errorf("list %s columns: %w", table, err)
+	}
+	cols := make(map[string]struct{}, len(rows))
+	for _, row := range rows {
+		cols[row.Name] = struct{}{}
+	}
+	return cols, nil
+}
+
+func renameColumn(db *gorm.DB, table, oldName, newName string) error {
+	var err error
+	switch db.Dialector.Name() {
+	case "mysql":
+		err = db.Exec(
+			fmt.Sprintf("ALTER TABLE `%s` CHANGE COLUMN `%s` `%s` varchar(100)", table, oldName, newName),
+		).Error
+	default:
+		err = db.Exec(
+			fmt.Sprintf("ALTER TABLE `%s` RENAME COLUMN `%s` TO `%s`", table, oldName, newName),
+		).Error
+	}
+	if err != nil {
+		return fmt.Errorf("rename %s.%s: %w", table, oldName, err)
 	}
 	return nil
 }

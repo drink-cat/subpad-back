@@ -16,26 +16,26 @@ const (
 
 type FeeInfo struct {
 	ID         int64     `gorm:"primaryKey;autoIncrement" json:"id"`
-	ChainID    int       `gorm:"column:chainid" json:"chainid"`
-	PoolID     string    `gorm:"size:100;index:idx_fee_info_pool_id" json:"pool_id"`
-	TxHash     string    `gorm:"size:100;index:idx_fee_info_tx_hash" json:"tx_hash"`
-	FeeType    string    `gorm:"size:32" json:"fee_type"`
-	FeeToken   string    `gorm:"size:100" json:"fee_token"`
-	FeeDecimal int       `json:"fee_decimal"`
-	FeeAmount  int64     `json:"fee_amount"`
-	FeeTo      string    `gorm:"size:100;index:idx_fee_info_fee_to" json:"fee_to"`
-	CreatedAt  time.Time `gorm:"type:datetime" json:"created_at"`
-	UpdatedAt  time.Time `gorm:"type:datetime" json:"updated_at"`
+	ChainID    int       `gorm:"column:chainid" json:"chainId"`
+	PoolID     string    `gorm:"size:100;index:idx_fee_info_pool_id" json:"poolId"`
+	TxHash     string    `gorm:"size:100;index:idx_fee_info_tx_hash" json:"txHash"`
+	FeeType    string    `gorm:"size:32" json:"feeType"`
+	FeeToken   string    `gorm:"size:100" json:"feeToken"`
+	FeeDecimal int       `json:"feeDecimal"`
+	FeeAmount  int64     `json:"feeAmount"`
+	FeeTo      string    `gorm:"size:100;index:idx_fee_info_fee_to" json:"feeTo"`
+	CreatedAt  time.Time `gorm:"type:datetime" json:"createdAt"`
+	UpdatedAt  time.Time `gorm:"type:datetime" json:"updatedAt"`
 }
 
 func (FeeInfo) TableName() string { return "fee_info" }
 
 type FeeInfoFilter struct {
-	ChainID *int   `form:"chainid"`
-	PoolID  string `form:"pool_id"`
-	TxHash  string `form:"tx_hash"`
-	FeeType string `form:"fee_type"`
-	FeeTo   string `form:"fee_to"`
+	ChainID *int   `form:"chainId"`
+	PoolID  string `form:"poolId"`
+	TxHash  string `form:"txHash"`
+	FeeType string `form:"feeType"`
+	FeeTo   string `form:"feeTo"`
 	Page
 }
 

@@ -1,6 +1,6 @@
 # API 清单
 
-基址：`http://host:8080`。业务接口只使用 GET 和 POST，每个操作一条独立 path。
+基址：`http://host:8080`。业务接口只使用 GET 和 POST，每个操作一条独立 path。请求 JSON、响应 JSON 和查询参数都使用驼峰，例如 `feeAddr`、`createdAt`、`chainId`。数据库列名仍使用下划线。
 
 ## 通用返回
 
@@ -32,7 +32,7 @@
 }
 ```
 
-删除成功时 `data` 为 `null`。列表的 `limit` 小于等于 0 时按 20 条，最大 200。修改接口会整行替换，未传的字段按零值写入；带创建时间的表会保留原来的 `created_at`。
+删除成功时 `data` 为 `null`。列表的 `limit` 小于等于 0 时按 20 条，最大 200。修改接口会整行替换，未传的字段按零值写入；带创建时间的表会保留原来的 `createdAt`。
 
 除 `POST /api/user_info/login` 和 `POST /api/user_info/create` 外，`/api` 请求都要带登录令牌：
 
@@ -56,6 +56,35 @@ Authorization: Bearer <jwtToken>
   "mysql": true,
   "eth": false,
   "cron": true
+}
+```
+
+## GET /api/config
+
+不需要令牌。给前端读取链和合约配置。不返回扫块起始块、确认数、定时周期，也不返回数据库和登录密钥。
+
+请求：无。
+
+响应：
+
+```json
+{
+  "code": 0,
+  "message": "ok",
+  "data": {
+    "quoteToken": {
+      "localUsdc": "0xcB0f2a13098f8e841e6Adfa5B17Ec00508b27665",
+      "sepoliaUsdc": "0x5728d6521217108001057f09271311987e81d5a0"
+    },
+    "syncLog": [
+      {
+        "name": "本地网",
+        "chainId": 31337,
+        "rpcUrl": "http://127.0.0.1:8545",
+        "launchContract": "0x88D1aF96098a928eE278f162c1a84f339652f95b"
+      }
+    ]
+  }
 }
 ```
 
@@ -102,7 +131,7 @@ Authorization: Bearer <jwtToken>
 {
   "username": "alice",
   "password": "secret",
-  "fee_addr": "0xfee"
+  "feeAddr": "0xfee"
 }
 ```
 
@@ -117,7 +146,7 @@ Authorization: Bearer <jwtToken>
   "data": {
     "id": 1,
     "username": "alice",
-    "fee_addr": "0xfee"
+    "feeAddr": "0xfee"
   }
 }
 ```
@@ -133,7 +162,7 @@ Authorization: Bearer <jwtToken>
   "id": 1,
   "username": "alice",
   "password": "",
-  "fee_addr": "0xnew"
+  "feeAddr": "0xnew"
 }
 ```
 
@@ -148,7 +177,7 @@ Authorization: Bearer <jwtToken>
   "data": {
     "id": 1,
     "username": "alice",
-    "fee_addr": "0xnew"
+    "feeAddr": "0xnew"
   }
 }
 ```
@@ -186,7 +215,7 @@ Authorization: Bearer <jwtToken>
   "data": {
     "id": 1,
     "username": "alice",
-    "fee_addr": "0xfee"
+    "feeAddr": "0xfee"
   }
 }
 ```
@@ -205,7 +234,7 @@ Authorization: Bearer <jwtToken>
     {
       "id": 1,
       "username": "alice",
-      "fee_addr": "0xfee"
+      "feeAddr": "0xfee"
     }
   ]
 }
@@ -219,21 +248,21 @@ Authorization: Bearer <jwtToken>
 
 ```json
 {
-  "subpad_id": 7,
-  "pool_id": "pool-1",
+  "subpadId": 7,
+  "poolId": "pool-1",
   "creator": "0xcreator",
-  "chainid": 1,
-  "token_addr": "0xtoken",
-  "token_name": "Demo",
-  "token_symbol": "AAA",
-  "quote_token_addr": "0xusdc",
-  "quote_token_symbol": "USDC",
-  "launch_supply": 1000000,
-  "tick_spacing": 60
+  "chainId": 1,
+  "tokenAddr": "0xtoken",
+  "tokenName": "Demo",
+  "tokenSymbol": "AAA",
+  "quoteTokenAddr": "0xusdc",
+  "quoteTokenSymbol": "USDC",
+  "launchSupply": 1000000,
+  "tickSpacing": 60
 }
 ```
 
-`subpad_id` 不传则为空。
+`subpadId` 不传则为空。
 
 响应：
 
@@ -243,17 +272,17 @@ Authorization: Bearer <jwtToken>
   "message": "ok",
   "data": {
     "id": 1,
-    "subpad_id": 7,
-    "pool_id": "pool-1",
+    "subpadId": 7,
+    "poolId": "pool-1",
     "creator": "0xcreator",
-    "chainid": 1,
-    "token_addr": "0xtoken",
-    "token_name": "Demo",
-    "token_symbol": "AAA",
-    "quote_token_addr": "0xusdc",
-    "quote_token_symbol": "USDC",
-    "launch_supply": 1000000,
-    "tick_spacing": 60
+    "chainId": 1,
+    "tokenAddr": "0xtoken",
+    "tokenName": "Demo",
+    "tokenSymbol": "AAA",
+    "quoteTokenAddr": "0xusdc",
+    "quoteTokenSymbol": "USDC",
+    "launchSupply": 1000000,
+    "tickSpacing": 60
   }
 }
 ```
@@ -265,17 +294,17 @@ Authorization: Bearer <jwtToken>
 ```json
 {
   "id": 1,
-  "subpad_id": 7,
-  "pool_id": "pool-1",
+  "subpadId": 7,
+  "poolId": "pool-1",
   "creator": "0xcreator",
-  "chainid": 1,
-  "token_addr": "0xtoken",
-  "token_name": "Demo",
-  "token_symbol": "AAA",
-  "quote_token_addr": "0xusdc",
-  "quote_token_symbol": "USDC",
-  "launch_supply": 2000000,
-  "tick_spacing": 60
+  "chainId": 1,
+  "tokenAddr": "0xtoken",
+  "tokenName": "Demo",
+  "tokenSymbol": "AAA",
+  "quoteTokenAddr": "0xusdc",
+  "quoteTokenSymbol": "USDC",
+  "launchSupply": 2000000,
+  "tickSpacing": 60
 }
 ```
 
@@ -287,17 +316,17 @@ Authorization: Bearer <jwtToken>
   "message": "ok",
   "data": {
     "id": 1,
-    "subpad_id": 7,
-    "pool_id": "pool-1",
+    "subpadId": 7,
+    "poolId": "pool-1",
     "creator": "0xcreator",
-    "chainid": 1,
-    "token_addr": "0xtoken",
-    "token_name": "Demo",
-    "token_symbol": "AAA",
-    "quote_token_addr": "0xusdc",
-    "quote_token_symbol": "USDC",
-    "launch_supply": 2000000,
-    "tick_spacing": 60
+    "chainId": 1,
+    "tokenAddr": "0xtoken",
+    "tokenName": "Demo",
+    "tokenSymbol": "AAA",
+    "quoteTokenAddr": "0xusdc",
+    "quoteTokenSymbol": "USDC",
+    "launchSupply": 2000000,
+    "tickSpacing": 60
   }
 }
 ```
@@ -334,24 +363,24 @@ Authorization: Bearer <jwtToken>
   "message": "ok",
   "data": {
     "id": 1,
-    "subpad_id": 7,
-    "pool_id": "pool-1",
+    "subpadId": 7,
+    "poolId": "pool-1",
     "creator": "0xcreator",
-    "chainid": 1,
-    "token_addr": "0xtoken",
-    "token_name": "Demo",
-    "token_symbol": "AAA",
-    "quote_token_addr": "0xusdc",
-    "quote_token_symbol": "USDC",
-    "launch_supply": 1000000,
-    "tick_spacing": 60
+    "chainId": 1,
+    "tokenAddr": "0xtoken",
+    "tokenName": "Demo",
+    "tokenSymbol": "AAA",
+    "quoteTokenAddr": "0xusdc",
+    "quoteTokenSymbol": "USDC",
+    "launchSupply": 1000000,
+    "tickSpacing": 60
   }
 }
 ```
 
 ## GET /api/token_info/list
 
-请求：查询参数 `subpad_id=7&pool_id=pool-1&creator=0xcreator&chainid=1&token_addr=0xtoken&offset=0&limit=20`。筛选参数可不传。无 JSON 请求体。
+请求：查询参数 `subpadId=7&poolId=pool-1&creator=0xcreator&chainId=1&tokenAddr=0xtoken&offset=0&limit=20`。筛选参数可不传。无 JSON 请求体。
 
 响应：
 
@@ -362,17 +391,17 @@ Authorization: Bearer <jwtToken>
   "data": [
     {
       "id": 1,
-      "subpad_id": 7,
-      "pool_id": "pool-1",
+      "subpadId": 7,
+      "poolId": "pool-1",
       "creator": "0xcreator",
-      "chainid": 1,
-      "token_addr": "0xtoken",
-      "token_name": "Demo",
-      "token_symbol": "AAA",
-      "quote_token_addr": "0xusdc",
-      "quote_token_symbol": "USDC",
-      "launch_supply": 1000000,
-      "tick_spacing": 60
+      "chainId": 1,
+      "tokenAddr": "0xtoken",
+      "tokenName": "Demo",
+      "tokenSymbol": "AAA",
+      "quoteTokenAddr": "0xusdc",
+      "quoteTokenSymbol": "USDC",
+      "launchSupply": 1000000,
+      "tickSpacing": 60
     }
   ]
 }
@@ -386,16 +415,16 @@ Authorization: Bearer <jwtToken>
 
 ```json
 {
-  "user_id": 3,
+  "userId": 3,
   "brand": "foods",
-  "name_full": "Foods Pad",
+  "nameFull": "Foods Pad",
   "status": 1,
-  "swap_type": "mockSwap",
+  "swapType": "mockSwap",
   "description": "详细描述"
 }
 ```
 
-`swap_type`：`mockSwap` 模拟，`uniSwap` 真实。请求里的 `feeAddr` 会被忽略。创建时后端写入当前登录用户的 `fee_addr`。
+`swapType`：`mockSwap` 模拟，`uniSwap` 真实。请求里的 `feeAddr` 会被忽略。创建时后端写入当前登录用户的 `feeAddr`。
 
 响应：
 
@@ -405,15 +434,15 @@ Authorization: Bearer <jwtToken>
   "message": "ok",
   "data": {
     "id": 1,
-    "user_id": 3,
+    "userId": 3,
     "feeAddr": "0xfee",
     "brand": "foods",
-    "name_full": "Foods Pad",
+    "nameFull": "Foods Pad",
     "status": 1,
-    "swap_type": "mockSwap",
+    "swapType": "mockSwap",
     "description": "详细描述",
-    "created_at": "2026-10-07T15:09:00+08:00",
-    "updated_at": "2026-10-07T15:09:00+08:00"
+    "createdAt": "2026-10-07T15:09:00+08:00",
+    "updatedAt": "2026-10-07T15:09:00+08:00"
   }
 }
 ```
@@ -425,11 +454,11 @@ Authorization: Bearer <jwtToken>
 ```json
 {
   "id": 1,
-  "user_id": 3,
+  "userId": 3,
   "brand": "foods",
-  "name_full": "Foods Pad",
+  "nameFull": "Foods Pad",
   "status": 1,
-  "swap_type": "uniSwap",
+  "swapType": "uniSwap",
   "description": "更新后的描述"
 }
 ```
@@ -442,20 +471,20 @@ Authorization: Bearer <jwtToken>
   "message": "ok",
   "data": {
     "id": 1,
-    "user_id": 3,
+    "userId": 3,
     "feeAddr": "0xfee",
     "brand": "foods",
-    "name_full": "Foods Pad",
+    "nameFull": "Foods Pad",
     "status": 1,
-    "swap_type": "uniSwap",
+    "swapType": "uniSwap",
     "description": "更新后的描述",
-    "created_at": "2026-10-07T15:09:00+08:00",
-    "updated_at": "2026-10-07T16:00:00+08:00"
+    "createdAt": "2026-10-07T15:09:00+08:00",
+    "updatedAt": "2026-10-07T16:00:00+08:00"
   }
 }
 ```
 
-`created_at` 和 `feeAddr` 保持创建时的值。
+`createdAt` 和 `feeAddr` 保持创建时的值。
 
 ## POST /api/subpad_info/delete
 
@@ -489,22 +518,22 @@ Authorization: Bearer <jwtToken>
   "message": "ok",
   "data": {
     "id": 1,
-    "user_id": 3,
+    "userId": 3,
     "feeAddr": "0xfee",
     "brand": "foods",
-    "name_full": "Foods Pad",
+    "nameFull": "Foods Pad",
     "status": 1,
-    "swap_type": "mockSwap",
+    "swapType": "mockSwap",
     "description": "详细描述",
-    "created_at": "2026-10-07T15:09:00+08:00",
-    "updated_at": "2026-10-07T15:09:00+08:00"
+    "createdAt": "2026-10-07T15:09:00+08:00",
+    "updatedAt": "2026-10-07T15:09:00+08:00"
   }
 }
 ```
 
 ## GET /api/subpad_info/list
 
-请求：查询参数 `user_id=3&brand=foods&status=1&swap_type=mockSwap&offset=0&limit=20`。筛选参数可不传。无 JSON 请求体。
+请求：查询参数 `userId=3&brand=foods&status=1&swapType=mockSwap&offset=0&limit=20`。筛选参数可不传。无 JSON 请求体。
 
 响应：
 
@@ -515,15 +544,15 @@ Authorization: Bearer <jwtToken>
   "data": [
     {
       "id": 1,
-      "user_id": 3,
+      "userId": 3,
       "feeAddr": "0xfee",
       "brand": "foods",
-      "name_full": "Foods Pad",
+      "nameFull": "Foods Pad",
       "status": 1,
-      "swap_type": "mockSwap",
+      "swapType": "mockSwap",
       "description": "详细描述",
-      "created_at": "2026-10-07T15:09:00+08:00",
-      "updated_at": "2026-10-07T15:09:00+08:00"
+      "createdAt": "2026-10-07T15:09:00+08:00",
+      "updatedAt": "2026-10-07T15:09:00+08:00"
     }
   ]
 }
@@ -537,18 +566,18 @@ Authorization: Bearer <jwtToken>
 
 ```json
 {
-  "chainid": 1,
-  "pool_id": "pool-1",
-  "tx_hash": "0xtx",
-  "fee_type": "platform",
-  "fee_token": "0xusdc",
-  "fee_decimal": 6,
-  "fee_amount": 100,
-  "fee_to": "0xfee"
+  "chainId": 1,
+  "poolId": "pool-1",
+  "txHash": "0xtx",
+  "feeType": "platform",
+  "feeToken": "0xusdc",
+  "feeDecimal": 6,
+  "feeAmount": 100,
+  "feeTo": "0xfee"
 }
 ```
 
-`fee_type`：`platform` 平台费，`tokencreator` 创建者费，`subpad` 子 pad 费。
+`feeType`：`platform` 平台费，`tokencreator` 创建者费，`subpad` 子 pad 费。
 
 响应：
 
@@ -558,16 +587,16 @@ Authorization: Bearer <jwtToken>
   "message": "ok",
   "data": {
     "id": 1,
-    "chainid": 1,
-    "pool_id": "pool-1",
-    "tx_hash": "0xtx",
-    "fee_type": "platform",
-    "fee_token": "0xusdc",
-    "fee_decimal": 6,
-    "fee_amount": 100,
-    "fee_to": "0xfee",
-    "created_at": "2026-10-07T15:09:00+08:00",
-    "updated_at": "2026-10-07T15:09:00+08:00"
+    "chainId": 1,
+    "poolId": "pool-1",
+    "txHash": "0xtx",
+    "feeType": "platform",
+    "feeToken": "0xusdc",
+    "feeDecimal": 6,
+    "feeAmount": 100,
+    "feeTo": "0xfee",
+    "createdAt": "2026-10-07T15:09:00+08:00",
+    "updatedAt": "2026-10-07T15:09:00+08:00"
   }
 }
 ```
@@ -579,14 +608,14 @@ Authorization: Bearer <jwtToken>
 ```json
 {
   "id": 1,
-  "chainid": 1,
-  "pool_id": "pool-1",
-  "tx_hash": "0xtx",
-  "fee_type": "subpad",
-  "fee_token": "0xusdc",
-  "fee_decimal": 6,
-  "fee_amount": 200,
-  "fee_to": "0xfee"
+  "chainId": 1,
+  "poolId": "pool-1",
+  "txHash": "0xtx",
+  "feeType": "subpad",
+  "feeToken": "0xusdc",
+  "feeDecimal": 6,
+  "feeAmount": 200,
+  "feeTo": "0xfee"
 }
 ```
 
@@ -598,16 +627,16 @@ Authorization: Bearer <jwtToken>
   "message": "ok",
   "data": {
     "id": 1,
-    "chainid": 1,
-    "pool_id": "pool-1",
-    "tx_hash": "0xtx",
-    "fee_type": "subpad",
-    "fee_token": "0xusdc",
-    "fee_decimal": 6,
-    "fee_amount": 200,
-    "fee_to": "0xfee",
-    "created_at": "2026-10-07T15:09:00+08:00",
-    "updated_at": "2026-10-07T16:00:00+08:00"
+    "chainId": 1,
+    "poolId": "pool-1",
+    "txHash": "0xtx",
+    "feeType": "subpad",
+    "feeToken": "0xusdc",
+    "feeDecimal": 6,
+    "feeAmount": 200,
+    "feeTo": "0xfee",
+    "createdAt": "2026-10-07T15:09:00+08:00",
+    "updatedAt": "2026-10-07T16:00:00+08:00"
   }
 }
 ```
@@ -644,23 +673,23 @@ Authorization: Bearer <jwtToken>
   "message": "ok",
   "data": {
     "id": 1,
-    "chainid": 1,
-    "pool_id": "pool-1",
-    "tx_hash": "0xtx",
-    "fee_type": "platform",
-    "fee_token": "0xusdc",
-    "fee_decimal": 6,
-    "fee_amount": 100,
-    "fee_to": "0xfee",
-    "created_at": "2026-10-07T15:09:00+08:00",
-    "updated_at": "2026-10-07T15:09:00+08:00"
+    "chainId": 1,
+    "poolId": "pool-1",
+    "txHash": "0xtx",
+    "feeType": "platform",
+    "feeToken": "0xusdc",
+    "feeDecimal": 6,
+    "feeAmount": 100,
+    "feeTo": "0xfee",
+    "createdAt": "2026-10-07T15:09:00+08:00",
+    "updatedAt": "2026-10-07T15:09:00+08:00"
   }
 }
 ```
 
 ## GET /api/fee_info/list
 
-请求：查询参数 `chainid=1&pool_id=pool-1&tx_hash=0xtx&fee_type=platform&fee_to=0xfee&offset=0&limit=20`。筛选参数可不传。无 JSON 请求体。
+请求：查询参数 `chainId=1&poolId=pool-1&txHash=0xtx&feeType=platform&feeTo=0xfee&offset=0&limit=20`。筛选参数可不传。无 JSON 请求体。
 
 响应：
 
@@ -671,16 +700,16 @@ Authorization: Bearer <jwtToken>
   "data": [
     {
       "id": 1,
-      "chainid": 1,
-      "pool_id": "pool-1",
-      "tx_hash": "0xtx",
-      "fee_type": "platform",
-      "fee_token": "0xusdc",
-      "fee_decimal": 6,
-      "fee_amount": 100,
-      "fee_to": "0xfee",
-      "created_at": "2026-10-07T15:09:00+08:00",
-      "updated_at": "2026-10-07T15:09:00+08:00"
+      "chainId": 1,
+      "poolId": "pool-1",
+      "txHash": "0xtx",
+      "feeType": "platform",
+      "feeToken": "0xusdc",
+      "feeDecimal": 6,
+      "feeAmount": 100,
+      "feeTo": "0xfee",
+      "createdAt": "2026-10-07T15:09:00+08:00",
+      "updatedAt": "2026-10-07T15:09:00+08:00"
     }
   ]
 }
@@ -694,20 +723,20 @@ Authorization: Bearer <jwtToken>
 
 ```json
 {
-  "chainid": 1,
-  "block_number": 10,
-  "block_hash": "0xblock",
-  "tx_hash": "0xhash",
-  "tx_index": 0,
-  "log_index": 2,
-  "contract_addr": "0xcontract",
+  "chainId": 1,
+  "blockNumber": 10,
+  "blockHash": "0xblock",
+  "txHash": "0xhash",
+  "txIndex": 0,
+  "logIndex": 2,
+  "contractAddr": "0xcontract",
   "topics": "0xtopic",
   "data": "0xdata",
   "removed": 0
 }
 ```
 
-`removed`：0 未移除，1 因链重组已移除。`chainid + tx_hash + log_index` 唯一，重复写入返回 409。
+`removed`：0 未移除，1 因链重组已移除。`chainId + txHash + logIndex` 唯一，重复写入返回 409。
 
 响应：
 
@@ -717,18 +746,18 @@ Authorization: Bearer <jwtToken>
   "message": "ok",
   "data": {
     "id": 1,
-    "chainid": 1,
-    "block_number": 10,
-    "block_hash": "0xblock",
-    "tx_hash": "0xhash",
-    "tx_index": 0,
-    "log_index": 2,
-    "contract_addr": "0xcontract",
+    "chainId": 1,
+    "blockNumber": 10,
+    "blockHash": "0xblock",
+    "txHash": "0xhash",
+    "txIndex": 0,
+    "logIndex": 2,
+    "contractAddr": "0xcontract",
     "topics": "0xtopic",
     "data": "0xdata",
     "removed": 0,
-    "created_at": "2026-10-07T15:09:00+08:00",
-    "updated_at": "2026-10-07T15:09:00+08:00"
+    "createdAt": "2026-10-07T15:09:00+08:00",
+    "updatedAt": "2026-10-07T15:09:00+08:00"
   }
 }
 ```
@@ -740,13 +769,13 @@ Authorization: Bearer <jwtToken>
 ```json
 {
   "id": 1,
-  "chainid": 1,
-  "block_number": 10,
-  "block_hash": "0xblock",
-  "tx_hash": "0xhash",
-  "tx_index": 0,
-  "log_index": 2,
-  "contract_addr": "0xcontract",
+  "chainId": 1,
+  "blockNumber": 10,
+  "blockHash": "0xblock",
+  "txHash": "0xhash",
+  "txIndex": 0,
+  "logIndex": 2,
+  "contractAddr": "0xcontract",
   "topics": "0xtopic",
   "data": "0xdata",
   "removed": 1
@@ -761,18 +790,18 @@ Authorization: Bearer <jwtToken>
   "message": "ok",
   "data": {
     "id": 1,
-    "chainid": 1,
-    "block_number": 10,
-    "block_hash": "0xblock",
-    "tx_hash": "0xhash",
-    "tx_index": 0,
-    "log_index": 2,
-    "contract_addr": "0xcontract",
+    "chainId": 1,
+    "blockNumber": 10,
+    "blockHash": "0xblock",
+    "txHash": "0xhash",
+    "txIndex": 0,
+    "logIndex": 2,
+    "contractAddr": "0xcontract",
     "topics": "0xtopic",
     "data": "0xdata",
     "removed": 1,
-    "created_at": "2026-10-07T15:09:00+08:00",
-    "updated_at": "2026-10-07T16:00:00+08:00"
+    "createdAt": "2026-10-07T15:09:00+08:00",
+    "updatedAt": "2026-10-07T16:00:00+08:00"
   }
 }
 ```
@@ -809,25 +838,25 @@ Authorization: Bearer <jwtToken>
   "message": "ok",
   "data": {
     "id": 1,
-    "chainid": 1,
-    "block_number": 10,
-    "block_hash": "0xblock",
-    "tx_hash": "0xhash",
-    "tx_index": 0,
-    "log_index": 2,
-    "contract_addr": "0xcontract",
+    "chainId": 1,
+    "blockNumber": 10,
+    "blockHash": "0xblock",
+    "txHash": "0xhash",
+    "txIndex": 0,
+    "logIndex": 2,
+    "contractAddr": "0xcontract",
     "topics": "0xtopic",
     "data": "0xdata",
     "removed": 0,
-    "created_at": "2026-10-07T15:09:00+08:00",
-    "updated_at": "2026-10-07T15:09:00+08:00"
+    "createdAt": "2026-10-07T15:09:00+08:00",
+    "updatedAt": "2026-10-07T15:09:00+08:00"
   }
 }
 ```
 
 ## GET /api/sync_event/list
 
-请求：查询参数 `chainid=1&tx_hash=0xhash&contract_addr=0xcontract&removed=0&offset=0&limit=20`。筛选参数可不传。无 JSON 请求体。
+请求：查询参数 `chainId=1&txHash=0xhash&contractAddr=0xcontract&removed=0&offset=0&limit=20`。筛选参数可不传。无 JSON 请求体。
 
 响应：
 
@@ -838,24 +867,24 @@ Authorization: Bearer <jwtToken>
   "data": [
     {
       "id": 1,
-      "chainid": 1,
-      "block_number": 10,
-      "block_hash": "0xblock",
-      "tx_hash": "0xhash",
-      "tx_index": 0,
-      "log_index": 2,
-      "contract_addr": "0xcontract",
+      "chainId": 1,
+      "blockNumber": 10,
+      "blockHash": "0xblock",
+      "txHash": "0xhash",
+      "txIndex": 0,
+      "logIndex": 2,
+      "contractAddr": "0xcontract",
       "topics": "0xtopic",
       "data": "0xdata",
       "removed": 0,
-      "created_at": "2026-10-07T15:09:00+08:00",
-      "updated_at": "2026-10-07T15:09:00+08:00"
+      "createdAt": "2026-10-07T15:09:00+08:00",
+      "updatedAt": "2026-10-07T15:09:00+08:00"
     }
   ]
 }
 ```
 
-按 `block_number`、`log_index` 倒序。
+按 `blockNumber`、`logIndex` 倒序。
 
 ## POST /api/sync_cursor/create
 
@@ -863,12 +892,12 @@ Authorization: Bearer <jwtToken>
 
 ```json
 {
-  "chainid": 1,
-  "block_number": 100
+  "chainId": 1,
+  "blockNumber": 100
 }
 ```
 
-`chainid` 唯一，同一条链重复创建返回 409。
+`chainId` 唯一，同一条链重复创建返回 409。
 
 响应：
 
@@ -878,10 +907,10 @@ Authorization: Bearer <jwtToken>
   "message": "ok",
   "data": {
     "id": 1,
-    "chainid": 1,
-    "block_number": 100,
-    "created_at": "2026-10-07T15:09:00+08:00",
-    "updated_at": "2026-10-07T15:09:00+08:00"
+    "chainId": 1,
+    "blockNumber": 100,
+    "createdAt": "2026-10-07T15:09:00+08:00",
+    "updatedAt": "2026-10-07T15:09:00+08:00"
   }
 }
 ```
@@ -893,8 +922,8 @@ Authorization: Bearer <jwtToken>
 ```json
 {
   "id": 1,
-  "chainid": 1,
-  "block_number": 250
+  "chainId": 1,
+  "blockNumber": 250
 }
 ```
 
@@ -906,10 +935,10 @@ Authorization: Bearer <jwtToken>
   "message": "ok",
   "data": {
     "id": 1,
-    "chainid": 1,
-    "block_number": 250,
-    "created_at": "2026-10-07T15:09:00+08:00",
-    "updated_at": "2026-10-07T16:00:00+08:00"
+    "chainId": 1,
+    "blockNumber": 250,
+    "createdAt": "2026-10-07T15:09:00+08:00",
+    "updatedAt": "2026-10-07T16:00:00+08:00"
   }
 }
 ```
@@ -946,17 +975,17 @@ Authorization: Bearer <jwtToken>
   "message": "ok",
   "data": {
     "id": 1,
-    "chainid": 1,
-    "block_number": 100,
-    "created_at": "2026-10-07T15:09:00+08:00",
-    "updated_at": "2026-10-07T15:09:00+08:00"
+    "chainId": 1,
+    "blockNumber": 100,
+    "createdAt": "2026-10-07T15:09:00+08:00",
+    "updatedAt": "2026-10-07T15:09:00+08:00"
   }
 }
 ```
 
 ## GET /api/sync_cursor/list
 
-请求：查询参数 `chainid=1&offset=0&limit=20`。`chainid` 可不传。无 JSON 请求体。
+请求：查询参数 `chainId=1&offset=0&limit=20`。`chainId` 可不传。无 JSON 请求体。
 
 响应：
 
@@ -967,13 +996,13 @@ Authorization: Bearer <jwtToken>
   "data": [
     {
       "id": 1,
-      "chainid": 1,
-      "block_number": 250,
-      "created_at": "2026-10-07T15:09:00+08:00",
-      "updated_at": "2026-10-07T16:00:00+08:00"
+      "chainId": 1,
+      "blockNumber": 250,
+      "createdAt": "2026-10-07T15:09:00+08:00",
+      "updatedAt": "2026-10-07T16:00:00+08:00"
     }
   ]
 }
 ```
 
-按 `chainid` 升序。
+按 `chainId` 升序。

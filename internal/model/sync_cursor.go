@@ -11,16 +11,16 @@ import (
 
 type SyncCursor struct {
 	ID          int64     `gorm:"primaryKey;autoIncrement" json:"id"`
-	ChainID     int       `gorm:"column:chainid;uniqueIndex:uk_sync_cursor_chainid" json:"chainid"`
-	BlockNumber int64     `json:"block_number"`
-	CreatedAt   time.Time `gorm:"type:datetime" json:"created_at"`
-	UpdatedAt   time.Time `gorm:"type:datetime" json:"updated_at"`
+	ChainID     int       `gorm:"column:chainid;uniqueIndex:uk_sync_cursor_chainid" json:"chainId"`
+	BlockNumber int64     `json:"blockNumber"`
+	CreatedAt   time.Time `gorm:"type:datetime" json:"createdAt"`
+	UpdatedAt   time.Time `gorm:"type:datetime" json:"updatedAt"`
 }
 
 func (SyncCursor) TableName() string { return "sync_cursor" }
 
 type SyncCursorFilter struct {
-	ChainID *int `form:"chainid"`
+	ChainID *int `form:"chainId"`
 	Page
 }
 

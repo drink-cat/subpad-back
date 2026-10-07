@@ -13,7 +13,7 @@ type UserInfo struct {
 	ID       int64  `gorm:"primaryKey;autoIncrement" json:"id"`
 	Username string `gorm:"size:200;index:idx_user_info_username" json:"username"`
 	Password string `gorm:"size:200" json:"-"`
-	FeeAddr  string `gorm:"size:100" json:"fee_addr"`
+	FeeAddr  string `gorm:"size:100" json:"feeAddr"`
 }
 
 func (UserInfo) TableName() string { return "user_info" }

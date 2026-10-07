@@ -15,26 +15,26 @@ const (
 
 type SyncEvent struct {
 	ID           int64     `gorm:"primaryKey;autoIncrement" json:"id"`
-	ChainID      int       `gorm:"column:chainid;uniqueIndex:uk_sync_event_chain_tx_log,priority:1" json:"chainid"`
-	BlockNumber  int64     `json:"block_number"`
-	BlockHash    string    `gorm:"size:100" json:"block_hash"`
-	TxHash       string    `gorm:"size:100;uniqueIndex:uk_sync_event_chain_tx_log,priority:2" json:"tx_hash"`
-	TxIndex      int       `json:"tx_index"`
-	LogIndex     int       `gorm:"uniqueIndex:uk_sync_event_chain_tx_log,priority:3" json:"log_index"`
-	ContractAddr string    `gorm:"size:100;index:idx_sync_event_contract_addr" json:"contract_addr"`
+	ChainID      int       `gorm:"column:chainid;uniqueIndex:uk_sync_event_chain_tx_log,priority:1" json:"chainId"`
+	BlockNumber  int64     `json:"blockNumber"`
+	BlockHash    string    `gorm:"size:100" json:"blockHash"`
+	TxHash       string    `gorm:"size:100;uniqueIndex:uk_sync_event_chain_tx_log,priority:2" json:"txHash"`
+	TxIndex      int       `json:"txIndex"`
+	LogIndex     int       `gorm:"uniqueIndex:uk_sync_event_chain_tx_log,priority:3" json:"logIndex"`
+	ContractAddr string    `gorm:"size:100;index:idx_sync_event_contract_addr" json:"contractAddr"`
 	Topics       string    `gorm:"type:text" json:"topics"`
 	Data         string    `gorm:"type:mediumtext" json:"data"`
 	Removed      int       `gorm:"default:0" json:"removed"`
-	CreatedAt    time.Time `gorm:"type:datetime" json:"created_at"`
-	UpdatedAt    time.Time `gorm:"type:datetime" json:"updated_at"`
+	CreatedAt    time.Time `gorm:"type:datetime" json:"createdAt"`
+	UpdatedAt    time.Time `gorm:"type:datetime" json:"updatedAt"`
 }
 
 func (SyncEvent) TableName() string { return "sync_event" }
 
 type SyncEventFilter struct {
-	ChainID      *int   `form:"chainid"`
-	TxHash       string `form:"tx_hash"`
-	ContractAddr string `form:"contract_addr"`
+	ChainID      *int   `form:"chainId"`
+	TxHash       string `form:"txHash"`
+	ContractAddr string `form:"contractAddr"`
 	Removed      *int   `form:"removed"`
 	Page
 }

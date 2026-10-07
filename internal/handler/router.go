@@ -28,6 +28,7 @@ func NewRouter(sc *svc.ServiceContext) *gin.Engine {
 	})
 
 	api := r.Group("/api")
+	api.GET("/config", h.getConfig)
 	api.POST("/user_info/login", h.login)
 	api.POST("/user_info/create", h.createUser)
 

@@ -10,7 +10,7 @@ type userBody struct {
 	ID       int64  `json:"id"`
 	Username string `json:"username"`
 	Password string `json:"password"`
-	FeeAddr  string `json:"fee_addr"`
+	FeeAddr  string `json:"feeAddr"`
 }
 
 func (h *Handler) createUser(c *gin.Context) {

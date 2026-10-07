@@ -41,7 +41,7 @@ func TestUserAndRelatedAPI(t *testing.T) {
 	rec := perform(r, http.MethodPost, "/api/user_info/create", map[string]any{
 		"username": "alice",
 		"password": "secret",
-		"fee_addr": "0xfee",
+		"feeAddr":  "0xfee",
 	})
 	if rec.Code != http.StatusOK {
 		t.Fatalf("create status = %d body = %s", rec.Code, rec.Body.String())
@@ -79,7 +79,7 @@ func TestUserAndRelatedAPI(t *testing.T) {
 	rec = perform(r, http.MethodPost, "/api/user_info/update", map[string]any{
 		"id":       user.ID,
 		"username": "alice",
-		"fee_addr": "0xnew",
+		"feeAddr":  "0xnew",
 	})
 	updated := decodeData[model.UserInfo](t, rec)
 	if updated.FeeAddr != "0xnew" {
@@ -113,7 +113,7 @@ func TestUserAndRelatedAPI(t *testing.T) {
 		TokenAddr: "0xtoken",
 	})
 	token := decodeData[model.TokenInfo](t, rec)
-	rec = perform(r, http.MethodGet, "/api/token_info/list?pool_id=pool-1&chainid=1", nil)
+	rec = perform(r, http.MethodGet, "/api/token_info/list?poolId=pool-1&chainId=1", nil)
 	tokens := decodeData[[]model.TokenInfo](t, rec)
 	if len(tokens) != 1 || tokens[0].ID != token.ID || tokens[0].SubpadID == nil || *tokens[0].SubpadID != 7 {
 		t.Fatalf("tokens = %+v", tokens)
@@ -131,7 +131,7 @@ func TestUserAndRelatedAPI(t *testing.T) {
 	if subpad.CreatedAt.IsZero() || subpad.SwapType != model.SwapTypeMock || subpad.FeeAddr != "0xnew" {
 		t.Fatalf("subpad = %+v", subpad)
 	}
-	rec = perform(r, http.MethodGet, "/api/subpad_info/list?swap_type="+model.SwapTypeMock, nil)
+	rec = perform(r, http.MethodGet, "/api/subpad_info/list?swapType="+model.SwapTypeMock, nil)
 	subpads := decodeData[[]model.SubpadInfo](t, rec)
 	if len(subpads) != 1 || subpads[0].ID != subpad.ID {
 		t.Fatalf("subpads = %+v", subpads)
@@ -164,7 +164,7 @@ func TestUserAndRelatedAPI(t *testing.T) {
 		FeeTo:      "0xfee",
 	})
 	fee := decodeData[model.FeeInfo](t, rec)
-	rec = perform(r, http.MethodGet, "/api/fee_info/list?fee_to=0xfee&fee_type=platform", nil)
+	rec = perform(r, http.MethodGet, "/api/fee_info/list?feeTo=0xfee&feeType=platform", nil)
 	fees := decodeData[[]model.FeeInfo](t, rec)
 	if len(fees) != 1 || fees[0].ID != fee.ID || fees[0].FeeAmount != 100 {
 		t.Fatalf("fees = %+v", fees)
@@ -207,7 +207,7 @@ func TestUserAndRelatedAPI(t *testing.T) {
 	if moved.BlockNumber != 250 || !moved.CreatedAt.Equal(cursor.CreatedAt) {
 		t.Fatalf("cursor = %+v", moved)
 	}
-	rec = perform(r, http.MethodGet, "/api/sync_cursor/list?chainid=1", nil)
+	rec = perform(r, http.MethodGet, "/api/sync_cursor/list?chainId=1", nil)
 	cursors := decodeData[[]model.SyncCursor](t, rec)
 	if len(cursors) != 1 || cursors[0].BlockNumber != 250 {
 		t.Fatalf("cursors = %+v", cursors)
@@ -231,6 +231,36 @@ func TestUserAndRelatedAPI(t *testing.T) {
 	rec = perform(r, http.MethodGet, "/health", nil)
 	if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), `"status":"ok"`) {
 		t.Fatalf("health = %d %s", rec.Code, rec.Body.String())
+	}
+}
+
+func TestPublicConfig(t *testing.T) {
+	r := NewRouter(&svc.ServiceContext{
+		Config: &config.Config{
+			Server: config.ServerConfig{Mode: gin.TestMode},
+			Domain: config.DomainConfig{Suffix: "launch.o1.local"},
+			QuoteToken: config.QuoteTokenConfig{
+				LocalUsdc:   "0xlocal",
+				SepoliaUsdc: "0xsep",
+			},
+			SyncLog: []config.SyncLogConfig{{
+				Name:                 "本地网",
+				ChainID:              31337,
+				RPCURL:               "http://127.0.0.1:8545",
+				BeginBlock:           705,
+				Confirmations:        1,
+				TimerIntervalSeconds: 60,
+				LaunchContract:       "0x88",
+			}},
+		},
+	})
+	rec := perform(r, http.MethodGet, "/api/config", nil)
+	body := rec.Body.String()
+	if rec.Code != http.StatusOK || !strings.Contains(body, `"localUsdc":"0xlocal"`) || !strings.Contains(body, `"launchContract":"0x88"`) {
+		t.Fatalf("config = %d %s", rec.Code, body)
+	}
+	if strings.Contains(body, "beginBlock") || strings.Contains(body, "confirmations") || strings.Contains(body, "timerIntervalSeconds") {
+		t.Fatalf("scan settings leaked: %s", body)
 	}
 }
 

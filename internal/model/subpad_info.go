@@ -15,24 +15,24 @@ const (
 
 type SubpadInfo struct {
 	ID          int64     `gorm:"primaryKey;autoIncrement" json:"id"`
-	UserID      int64     `gorm:"index:idx_subpad_info_user_id" json:"user_id"`
-	FeeAddr     string    `gorm:"column:feeAddr;size:100" json:"feeAddr"`
+	UserID      int64     `gorm:"index:idx_subpad_info_user_id" json:"userId"`
+	FeeAddr     string    `gorm:"size:100" json:"feeAddr"`
 	Brand       string    `gorm:"size:100;index:idx_subpad_info_brand" json:"brand"`
-	NameFull    string    `gorm:"size:200" json:"name_full"`
+	NameFull    string    `gorm:"size:200" json:"nameFull"`
 	Status      int       `json:"status"`
-	SwapType    string    `gorm:"size:32" json:"swap_type"`
+	SwapType    string    `gorm:"size:32" json:"swapType"`
 	Description string    `gorm:"type:text" json:"description"`
-	CreatedAt   time.Time `gorm:"type:datetime" json:"created_at"`
-	UpdatedAt   time.Time `gorm:"type:datetime" json:"updated_at"`
+	CreatedAt   time.Time `gorm:"type:datetime" json:"createdAt"`
+	UpdatedAt   time.Time `gorm:"type:datetime" json:"updatedAt"`
 }
 
 func (SubpadInfo) TableName() string { return "subpad_info" }
 
 type SubpadInfoFilter struct {
-	UserID   *int64 `form:"user_id"`
+	UserID   *int64 `form:"userId"`
 	Brand    string `form:"brand"`
 	Status   *int   `form:"status"`
-	SwapType string `form:"swap_type"`
+	SwapType string `form:"swapType"`
 	Page
 }
 
