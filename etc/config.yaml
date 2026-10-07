@@ -1,0 +1,16 @@
+server:
+  host: 0.0.0.0
+  port: 8080
+  mode: debug
+
+# 示例：user:password@tcp(127.0.0.1:3306)/subpad?charset=utf8mb4&parseTime=True&loc=Local
+mysql:
+  dsn: "tom:123321@tcp(127.0.0.1:3306)/launch"
+
+# 示例：https://eth.llamarpc.com
+eth:
+  rpc: ""
+  chainId: 1
+
+cron:
+  enabled: true
