@@ -40,27 +40,41 @@ func TestScanTenBlocksFromBegin(t *testing.T) {
 	if err := Scan(context.Background(), client, store, cfg); err != nil {
 		t.Fatal(err)
 	}
-	if client.last.FromBlock.Cmp(big.NewInt(705)) != 0 || client.last.ToBlock.Cmp(big.NewInt(714)) != 0 {
-		t.Fatalf("range = %s-%s", client.last.FromBlock, client.last.ToBlock)
+	if len(client.queries) == 0 {
+		t.Fatal("no queries")
 	}
-	if len(client.last.Addresses) != 1 || client.last.Addresses[0] != addr {
-		t.Fatalf("addresses = %v", client.last.Addresses)
+	first := client.queries[0]
+	if first.FromBlock.Cmp(big.NewInt(705)) != 0 || first.ToBlock.Cmp(big.NewInt(714)) != 0 {
+		t.Fatalf("first range = %s-%s", first.FromBlock, first.ToBlock)
+	}
+	if len(first.Addresses) != 1 || first.Addresses[0] != addr {
+		t.Fatalf("addresses = %v", first.Addresses)
+	}
+	last := client.queries[len(client.queries)-1]
+	if last.ToBlock.Cmp(big.NewInt(799)) != 0 {
+		t.Fatalf("last to = %s", last.ToBlock)
+	}
+	for _, q := range client.queries {
+		span := q.ToBlock.Int64() - q.FromBlock.Int64() + 1
+		if span <= 0 || span > int64(BlocksPerScan) {
+			t.Fatalf("batch span = %d", span)
+		}
 	}
 	events, err := store.SyncEvent.List(context.Background(), model.SyncEventFilter{})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(events) != 2 || events[0].BlockNumber != 714 || events[1].BlockNumber != 705 {
+	if len(events) != 3 || events[0].BlockNumber != 715 || events[1].BlockNumber != 714 || events[2].BlockNumber != 705 {
 		t.Fatalf("events = %+v", events)
 	}
-	if events[1].Topics == "" || events[1].Data != "0x0102" || events[1].Removed != model.SyncEventActive {
-		t.Fatalf("event = %+v", events[1])
+	if events[2].Topics == "" || events[2].Data != "0x0102" || events[2].Removed != model.SyncEventActive {
+		t.Fatalf("event = %+v", events[2])
 	}
 	cursor, err := store.SyncCursor.GetByChainID(context.Background(), int(cfg.ChainID))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if cursor.BlockNumber != 714 {
+	if cursor.BlockNumber != 799 {
 		t.Fatalf("cursor = %d", cursor.BlockNumber)
 	}
 }
@@ -90,7 +104,7 @@ func TestScanResumesAndSkipsDuplicate(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if cursor.BlockNumber != 714 {
+	if cursor.BlockNumber != 799 {
 		t.Fatalf("cursor = %d", cursor.BlockNumber)
 	}
 }
@@ -153,8 +167,35 @@ func TestScanContinuesFromCursor(t *testing.T) {
 	if err := Scan(context.Background(), client, store, cfg); err != nil {
 		t.Fatal(err)
 	}
-	if client.last.FromBlock.Cmp(big.NewInt(715)) != 0 || client.last.ToBlock.Cmp(big.NewInt(724)) != 0 {
-		t.Fatalf("range = %s-%s", client.last.FromBlock, client.last.ToBlock)
+	if len(client.queries) == 0 {
+		t.Fatal("no queries")
+	}
+	first := client.queries[0]
+	if first.FromBlock.Cmp(big.NewInt(715)) != 0 || first.ToBlock.Cmp(big.NewInt(724)) != 0 {
+		t.Fatalf("first range = %s-%s", first.FromBlock, first.ToBlock)
+	}
+	cursor, err := store.SyncCursor.GetByChainID(context.Background(), int(cfg.ChainID))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cursor.BlockNumber != 799 {
+		t.Fatalf("cursor = %d", cursor.BlockNumber)
+	}
+}
+
+func TestScanKeepsCursorWhenLaterBatchFails(t *testing.T) {
+	store := openStore(t)
+	cfg := testCfg()
+	client := &stubClient{head: 800, failAfter: 2}
+	if err := Scan(context.Background(), client, store, cfg); err == nil {
+		t.Fatal("expected rpc error")
+	}
+	cursor, err := store.SyncCursor.GetByChainID(context.Background(), int(cfg.ChainID))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cursor.BlockNumber != 714 {
+		t.Fatalf("cursor = %d", cursor.BlockNumber)
 	}
 }
 
@@ -176,10 +217,13 @@ func TestScanStoresRemovedLog(t *testing.T) {
 }
 
 type stubClient struct {
-	head uint64
-	logs []types.Log
-	last ethereum.FilterQuery
-	fail bool
+	head      uint64
+	logs      []types.Log
+	queries   []ethereum.FilterQuery
+	last      ethereum.FilterQuery
+	fail      bool
+	failAfter int
+	calls     int
 }
 
 func (s *stubClient) BlockNumber(context.Context) (uint64, error) {
@@ -187,8 +231,10 @@ func (s *stubClient) BlockNumber(context.Context) (uint64, error) {
 }
 
 func (s *stubClient) FilterLogs(_ context.Context, q ethereum.FilterQuery) ([]types.Log, error) {
+	s.calls++
+	s.queries = append(s.queries, q)
 	s.last = q
-	if s.fail {
+	if s.fail || (s.failAfter > 0 && s.calls >= s.failAfter) {
 		return nil, errors.New("rpc")
 	}
 	from := q.FromBlock.Uint64()

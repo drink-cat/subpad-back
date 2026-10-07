@@ -20,7 +20,7 @@ import (
 	"github.com/drink-cat/subpad-back/internal/model"
 )
 
-// BlocksPerScan 是定时器每次向前扫的区块数。
+// BlocksPerScan 是每一批 FilterLogs 的区块数。一轮扫块按这个步长循环，直到确认高度。
 const BlocksPerScan = 10
 
 type logClient interface {
@@ -91,8 +91,9 @@ func (c *Chain) dial(ctx context.Context) (*ethclient.Client, error) {
 	return c.eth, nil
 }
 
-// Scan 从下标的下一块开始，最多扫 BlocksPerScan 个已确认区块。
-// 确认高度 = 链头 - confirmations。没有新块时不写库。
+// Scan 从下标的下一块开始，每次扫 BlocksPerScan 个已确认区块，循环直到确认高度。
+// 确认高度 = 链头 - confirmations，按本轮开始时的链头计算。没有新块时不写库。
+// 每一批成功后立刻写下标，中途失败时下次从下标继续。
 func Scan(ctx context.Context, client logClient, store *model.Store, cfg config.SyncLogConfig) error {
 	if err := ctx.Err(); err != nil {
 		return err
@@ -118,30 +119,36 @@ func Scan(ctx context.Context, client logClient, store *model.Store, cfg config.
 	if hasCursor {
 		cursorBlock = cursor.BlockNumber
 	}
-	from, to, ok := scanRange(hasCursor, cursorBlock, cfg.BeginBlock, head, cfg.Confirmations, BlocksPerScan)
-	if !ok {
-		return nil
-	}
-
-	logs, err := client.FilterLogs(ctx, ethereum.FilterQuery{
-		FromBlock: bigInt(from),
-		ToBlock:   bigInt(to),
-		Addresses: []common.Address{common.HexToAddress(cfg.LaunchContract)},
-	})
-	if err != nil {
-		return fmt.Errorf("scan %s logs %d-%d: %w", cfg.Name, from, to, err)
-	}
-	for _, lg := range logs {
-		logEvent(cfg.Name, chainID, lg)
-		if err = saveLog(ctx, store, chainID, lg); err != nil {
-			return fmt.Errorf("scan %s save log: %w", cfg.Name, err)
+	contract := common.HexToAddress(cfg.LaunchContract)
+	for {
+		if err = ctx.Err(); err != nil {
+			return err
 		}
+		from, to, ok := scanRange(hasCursor, cursorBlock, cfg.BeginBlock, head, cfg.Confirmations, BlocksPerScan)
+		if !ok {
+			return nil
+		}
+		logs, err := client.FilterLogs(ctx, ethereum.FilterQuery{
+			FromBlock: bigInt(from),
+			ToBlock:   bigInt(to),
+			Addresses: []common.Address{contract},
+		})
+		if err != nil {
+			return fmt.Errorf("scan %s logs %d-%d: %w", cfg.Name, from, to, err)
+		}
+		for _, lg := range logs {
+			logEvent(cfg.Name, chainID, lg)
+			if err = saveLog(ctx, store, chainID, lg); err != nil {
+				return fmt.Errorf("scan %s save log: %w", cfg.Name, err)
+			}
+		}
+		if err = store.SyncCursor.Upsert(ctx, chainID, to); err != nil {
+			return fmt.Errorf("scan %s cursor: %w", cfg.Name, err)
+		}
+		slog.Info("scanned blocks", "name", cfg.Name, "chainId", chainID, "from", from, "to", to, "logs", len(logs))
+		hasCursor = true
+		cursorBlock = to
 	}
-	if err = store.SyncCursor.Upsert(ctx, chainID, to); err != nil {
-		return fmt.Errorf("scan %s cursor: %w", cfg.Name, err)
-	}
-	slog.Info("scanned blocks", "name", cfg.Name, "chainId", chainID, "from", from, "to", to, "logs", len(logs))
-	return nil
 }
 
 func logEvent(chainName string, chainID int, lg types.Log) {
