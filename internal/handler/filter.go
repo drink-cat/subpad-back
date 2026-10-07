@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"encoding/json"
 	"errors"
 	"net"
 	"net/http"
@@ -15,8 +16,9 @@ import (
 )
 
 const (
-	ctxUser   = "currentUser"
-	ctxSubpad = "currentSubpad"
+	ctxUser      = "currentUser"
+	ctxSubpad    = "currentSubpad"
+	headerSubpad = "X-Subpad-Info"
 )
 
 func CurrentUser(c *gin.Context) (*model.UserInfo, bool) {
@@ -94,6 +96,13 @@ func (h *Handler) DomainFilter() gin.HandlerFunc {
 			c.Abort()
 			return
 		}
+		raw, err := json.Marshal(row)
+		if err != nil {
+			writeErr(c, err)
+			c.Abort()
+			return
+		}
+		c.Header(headerSubpad, string(raw))
 		c.Set(ctxSubpad, row)
 		c.Next()
 	}

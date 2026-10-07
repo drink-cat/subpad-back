@@ -93,6 +93,9 @@ func TestLoginAndDomain(t *testing.T) {
 	if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), `"brand":"foods"`) {
 		t.Fatalf("probe = %d %s", rec.Code, rec.Body.String())
 	}
+	if !strings.Contains(rec.Header().Get(headerSubpad), `"brand":"foods"`) || !strings.Contains(rec.Header().Get(headerSubpad), `"nameFull":"Foods"`) {
+		t.Fatalf("subpad header = %s", rec.Header().Get(headerSubpad))
+	}
 
 	req = httptest.NewRequest(http.MethodGet, "/probe", nil)
 	req.Host = "missing.launch.o1.local"
@@ -108,5 +111,8 @@ func TestLoginAndDomain(t *testing.T) {
 	probe.ServeHTTP(rec, req)
 	if rec.Code != http.StatusNoContent {
 		t.Fatalf("plain host status = %d body = %s", rec.Code, rec.Body.String())
+	}
+	if rec.Header().Get(headerSubpad) != "" {
+		t.Fatalf("plain host header = %s", rec.Header().Get(headerSubpad))
 	}
 }
