@@ -17,6 +17,7 @@ import (
 type ServiceContext struct {
 	Config    *config.Config
 	DB        *gorm.DB
+	Store     *model.Store
 	Eth       *ethclient.Client
 	Scheduler gocron.Scheduler
 }
@@ -28,6 +29,9 @@ func New(cfg *config.Config) (*ServiceContext, error) {
 	}
 	if db == nil {
 		slog.Info("mysql skipped: dsn is empty")
+	} else if err = model.AutoMigrate(db); err != nil {
+		closeDB(db)
+		return nil, err
 	}
 
 	ethClient, err := eth.Dial(cfg.Eth.RPC)
@@ -54,6 +58,7 @@ func New(cfg *config.Config) (*ServiceContext, error) {
 	return &ServiceContext{
 		Config:    cfg,
 		DB:        db,
+		Store:     model.NewStore(db),
 		Eth:       ethClient,
 		Scheduler: scheduler,
 	}, nil
