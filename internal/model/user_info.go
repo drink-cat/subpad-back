@@ -45,7 +45,7 @@ func isBcryptHash(s string) bool {
 }
 
 type UserInfoFilter struct {
-	Username string
+	Username string `form:"username"`
 	Page
 }
 

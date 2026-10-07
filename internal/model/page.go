@@ -9,8 +9,8 @@ const (
 
 // Page 是列表查询的偏移和条数。Limit 小于等于 0 时用默认条数。
 type Page struct {
-	Offset int
-	Limit  int
+	Offset int `form:"offset"`
+	Limit  int `form:"limit"`
 }
 
 func (p Page) Apply(db *gorm.DB) *gorm.DB {

@@ -23,9 +23,9 @@ type SubpadInfo struct {
 func (SubpadInfo) TableName() string { return "subpad_info" }
 
 type SubpadInfoFilter struct {
-	UserID *int64
-	Brand  string
-	Status *int
+	UserID *int64 `form:"user_id"`
+	Brand  string `form:"brand"`
+	Status *int   `form:"status"`
 	Page
 }
 

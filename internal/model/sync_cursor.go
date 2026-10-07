@@ -20,7 +20,7 @@ type SyncCursor struct {
 func (SyncCursor) TableName() string { return "sync_cursor" }
 
 type SyncCursorFilter struct {
-	ChainID *int
+	ChainID *int `form:"chainid"`
 	Page
 }
 

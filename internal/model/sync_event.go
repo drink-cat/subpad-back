@@ -32,10 +32,10 @@ type SyncEvent struct {
 func (SyncEvent) TableName() string { return "sync_event" }
 
 type SyncEventFilter struct {
-	ChainID      *int
-	TxHash       string
-	ContractAddr string
-	Removed      *int
+	ChainID      *int   `form:"chainid"`
+	TxHash       string `form:"tx_hash"`
+	ContractAddr string `form:"contract_addr"`
+	Removed      *int   `form:"removed"`
 	Page
 }
 

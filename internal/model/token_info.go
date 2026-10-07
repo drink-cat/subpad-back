@@ -25,11 +25,11 @@ type TokenInfo struct {
 func (TokenInfo) TableName() string { return "token_info" }
 
 type TokenInfoFilter struct {
-	SubpadID  *int64
-	PoolID    string
-	Creator   string
-	ChainID   *int
-	TokenAddr string
+	SubpadID  *int64 `form:"subpad_id"`
+	PoolID    string `form:"pool_id"`
+	Creator   string `form:"creator"`
+	ChainID   *int   `form:"chainid"`
+	TokenAddr string `form:"token_addr"`
 	Page
 }
 

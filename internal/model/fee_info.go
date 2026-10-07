@@ -31,11 +31,11 @@ type FeeInfo struct {
 func (FeeInfo) TableName() string { return "fee_info" }
 
 type FeeInfoFilter struct {
-	ChainID *int
-	PoolID  string
-	TxHash  string
-	FeeType string
-	FeeTo   string
+	ChainID *int   `form:"chainid"`
+	PoolID  string `form:"pool_id"`
+	TxHash  string `form:"tx_hash"`
+	FeeType string `form:"fee_type"`
+	FeeTo   string `form:"fee_to"`
 	Page
 }
 
