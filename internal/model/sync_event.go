@@ -22,6 +22,7 @@ type SyncEvent struct {
 	TxIndex      int       `json:"txIndex"`
 	LogIndex     int       `gorm:"uniqueIndex:uk_sync_event_chain_tx_log,priority:3" json:"logIndex"`
 	ContractAddr string    `gorm:"size:100;index:idx_sync_event_contract_addr" json:"contractAddr"`
+	EventName    string    `gorm:"size:64" json:"eventName"`
 	Topics       string    `gorm:"type:text" json:"topics"`
 	Data         string    `gorm:"type:mediumtext" json:"data"`
 	Removed      int       `gorm:"default:0" json:"removed"`
@@ -35,6 +36,7 @@ type SyncEventFilter struct {
 	ChainID      *int   `form:"chainId"`
 	TxHash       string `form:"txHash"`
 	ContractAddr string `form:"contractAddr"`
+	EventName    string `form:"eventName"`
 	Removed      *int   `form:"removed"`
 	Page
 }
@@ -86,6 +88,9 @@ func (r *SyncEventRepo) List(ctx context.Context, f SyncEventFilter) ([]SyncEven
 	}
 	if f.ContractAddr != "" {
 		q = q.Where("contract_addr = ?", f.ContractAddr)
+	}
+	if f.EventName != "" {
+		q = q.Where("event_name = ?", f.EventName)
 	}
 	if f.Removed != nil {
 		q = q.Where("removed = ?", *f.Removed)

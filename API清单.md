@@ -929,13 +929,14 @@ Authorization: Bearer <jwtToken>
   "txIndex": 0,
   "logIndex": 2,
   "contractAddr": "0xcontract",
+  "eventName": "TokenCreated",
   "topics": "0xtopic",
   "data": "0xdata",
   "removed": 0
 }
 ```
 
-`removed`：0 未移除，1 因链重组已移除。`chainId + txHash + logIndex` 唯一，重复写入返回 409。
+`eventName` 是事件名称，例如 `TokenCreated`、`FeeCharged`、`SwapOnce`。扫块认不出的日志留空。`removed`：0 未移除，1 因链重组已移除。`chainId + txHash + logIndex` 唯一，重复写入返回 409。
 
 响应：
 
@@ -952,6 +953,7 @@ Authorization: Bearer <jwtToken>
     "txIndex": 0,
     "logIndex": 2,
     "contractAddr": "0xcontract",
+    "eventName": "TokenCreated",
     "topics": "0xtopic",
     "data": "0xdata",
     "removed": 0,
@@ -975,6 +977,7 @@ Authorization: Bearer <jwtToken>
   "txIndex": 0,
   "logIndex": 2,
   "contractAddr": "0xcontract",
+  "eventName": "TokenCreated",
   "topics": "0xtopic",
   "data": "0xdata",
   "removed": 1
@@ -996,6 +999,7 @@ Authorization: Bearer <jwtToken>
     "txIndex": 0,
     "logIndex": 2,
     "contractAddr": "0xcontract",
+    "eventName": "TokenCreated",
     "topics": "0xtopic",
     "data": "0xdata",
     "removed": 1,
@@ -1044,6 +1048,7 @@ Authorization: Bearer <jwtToken>
     "txIndex": 0,
     "logIndex": 2,
     "contractAddr": "0xcontract",
+    "eventName": "TokenCreated",
     "topics": "0xtopic",
     "data": "0xdata",
     "removed": 0,
@@ -1055,7 +1060,7 @@ Authorization: Bearer <jwtToken>
 
 ## GET /api/sync_event/list
 
-请求：查询参数 `chainId=1&txHash=0xhash&contractAddr=0xcontract&removed=0&offset=0&limit=20`。筛选参数可不传。无 JSON 请求体。
+请求：查询参数 `chainId=1&txHash=0xhash&contractAddr=0xcontract&eventName=TokenCreated&removed=0&offset=0&limit=20`。筛选参数可不传。无 JSON 请求体。
 
 响应：
 
@@ -1073,6 +1078,7 @@ Authorization: Bearer <jwtToken>
       "txIndex": 0,
       "logIndex": 2,
       "contractAddr": "0xcontract",
+      "eventName": "TokenCreated",
       "topics": "0xtopic",
       "data": "0xdata",
       "removed": 0,

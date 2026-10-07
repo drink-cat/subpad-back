@@ -238,6 +238,18 @@ func decodeSwapOnce(lg types.Log) (swapOnce, error) {
 	}, nil
 }
 
+func eventName(lg types.Log) string {
+	if len(lg.Topics) == 0 {
+		return ""
+	}
+	for name, ev := range launchABI.Events {
+		if lg.Topics[0] == ev.ID {
+			return name
+		}
+	}
+	return ""
+}
+
 func feeTypeName(v uint8) (string, error) {
 	switch v {
 	case 0:

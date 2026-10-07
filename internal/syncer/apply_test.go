@@ -60,6 +60,13 @@ func TestApplyTokenCreatedUpdatesPending(t *testing.T) {
 	if rows[0].TokenAddr == "" || rows[0].PoolID == "" || rows[0].LaunchSupply.String() != supply.String() || rows[0].QuoteTokenSymbol != "USDC" {
 		t.Fatalf("token = %+v", rows[0])
 	}
+	events, err := store.SyncEvent.List(context.Background(), model.SyncEventFilter{EventName: "TokenCreated"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(events) != 1 || events[0].EventName != "TokenCreated" {
+		t.Fatalf("events = %+v", events)
+	}
 }
 
 func TestApplyTokenCreatedInsertsWhenMissing(t *testing.T) {
@@ -154,6 +161,18 @@ func TestRemovedAndUnknownLogsSkipBusinessTables(t *testing.T) {
 	}
 	if len(events) != 2 {
 		t.Fatalf("events = %d", len(events))
+	}
+	named := 0
+	for _, ev := range events {
+		if ev.EventName == "TokenCreated" {
+			named++
+		}
+		if ev.EventName != "" && ev.EventName != "TokenCreated" {
+			t.Fatalf("event name = %s", ev.EventName)
+		}
+	}
+	if named != 1 {
+		t.Fatalf("named events = %d", named)
 	}
 }
 

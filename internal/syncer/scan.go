@@ -151,8 +151,13 @@ func saveLog(ctx context.Context, store *model.Store, chainID int, lg types.Log)
 	}
 	txHash := lg.TxHash.Hex()
 	logIndex := int(lg.Index)
-	_, err := store.SyncEvent.GetByLog(ctx, chainID, txHash, logIndex)
+	name := eventName(lg)
+	existing, err := store.SyncEvent.GetByLog(ctx, chainID, txHash, logIndex)
 	if err == nil {
+		if name != "" && existing.EventName != name {
+			existing.EventName = name
+			return store.SyncEvent.Update(ctx, existing)
+		}
 		return nil
 	}
 	if !errors.Is(err, gorm.ErrRecordNotFound) {
@@ -170,6 +175,7 @@ func saveLog(ctx context.Context, store *model.Store, chainID int, lg types.Log)
 		TxIndex:      int(lg.TxIndex),
 		LogIndex:     logIndex,
 		ContractAddr: lg.Address.Hex(),
+		EventName:    name,
 		Topics:       encodeTopics(lg.Topics),
 		Data:         hexutil.Encode(lg.Data),
 		Removed:      removed,
