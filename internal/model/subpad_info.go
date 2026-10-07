@@ -16,7 +16,7 @@ const (
 type SubpadInfo struct {
 	ID          int64     `gorm:"primaryKey;autoIncrement" json:"id"`
 	UserID      int64     `gorm:"index:idx_subpad_info_user_id" json:"user_id"`
-	UserAddr    string    `gorm:"size:100" json:"user_addr"`
+	FeeAddr     string    `gorm:"column:feeAddr;size:100" json:"feeAddr"`
 	Brand       string    `gorm:"size:100;index:idx_subpad_info_brand" json:"brand"`
 	NameFull    string    `gorm:"size:200" json:"name_full"`
 	Status      int       `json:"status"`

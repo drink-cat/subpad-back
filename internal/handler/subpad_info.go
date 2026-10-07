@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"net/http"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -20,6 +21,12 @@ func (h *Handler) createSubpad(c *gin.Context) {
 	row.ID = 0
 	row.CreatedAt = time.Time{}
 	row.UpdatedAt = time.Time{}
+	user, ok := CurrentUser(c)
+	if !ok {
+		fail(c, http.StatusUnauthorized, codeUnauthorized, "unauthorized")
+		return
+	}
+	row.FeeAddr = user.FeeAddr
 	if err := store.SubpadInfo.Create(c.Request.Context(), &row); err != nil {
 		writeErr(c, err)
 		return
@@ -63,6 +70,7 @@ func (h *Handler) updateSubpad(c *gin.Context) {
 		return
 	}
 	row.CreatedAt = old.CreatedAt
+	row.FeeAddr = old.FeeAddr
 	if err = store.SubpadInfo.Update(ctx, &row); err != nil {
 		writeErr(c, err)
 		return

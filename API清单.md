@@ -387,7 +387,6 @@ Authorization: Bearer <jwtToken>
 ```json
 {
   "user_id": 3,
-  "user_addr": "0xuser",
   "brand": "foods",
   "name_full": "Foods Pad",
   "status": 1,
@@ -396,7 +395,7 @@ Authorization: Bearer <jwtToken>
 }
 ```
 
-`swap_type`：`mockSwap` 模拟，`uniSwap` 真实。
+`swap_type`：`mockSwap` 模拟，`uniSwap` 真实。请求里的 `feeAddr` 会被忽略。创建时后端写入当前登录用户的 `fee_addr`。
 
 响应：
 
@@ -407,7 +406,7 @@ Authorization: Bearer <jwtToken>
   "data": {
     "id": 1,
     "user_id": 3,
-    "user_addr": "0xuser",
+    "feeAddr": "0xfee",
     "brand": "foods",
     "name_full": "Foods Pad",
     "status": 1,
@@ -427,7 +426,6 @@ Authorization: Bearer <jwtToken>
 {
   "id": 1,
   "user_id": 3,
-  "user_addr": "0xuser",
   "brand": "foods",
   "name_full": "Foods Pad",
   "status": 1,
@@ -445,7 +443,7 @@ Authorization: Bearer <jwtToken>
   "data": {
     "id": 1,
     "user_id": 3,
-    "user_addr": "0xuser",
+    "feeAddr": "0xfee",
     "brand": "foods",
     "name_full": "Foods Pad",
     "status": 1,
@@ -457,7 +455,7 @@ Authorization: Bearer <jwtToken>
 }
 ```
 
-`created_at` 保持创建时的值。
+`created_at` 和 `feeAddr` 保持创建时的值。
 
 ## POST /api/subpad_info/delete
 
@@ -492,7 +490,7 @@ Authorization: Bearer <jwtToken>
   "data": {
     "id": 1,
     "user_id": 3,
-    "user_addr": "0xuser",
+    "feeAddr": "0xfee",
     "brand": "foods",
     "name_full": "Foods Pad",
     "status": 1,
@@ -518,7 +516,7 @@ Authorization: Bearer <jwtToken>
     {
       "id": 1,
       "user_id": 3,
-      "user_addr": "0xuser",
+      "feeAddr": "0xfee",
       "brand": "foods",
       "name_full": "Foods Pad",
       "status": 1,
